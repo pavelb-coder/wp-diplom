@@ -143,7 +143,7 @@ $wpdc_default_template = $wpdc_template ? $wpdc_template : absint( $settings['de
 				<?php if ( $wpdc_code ) : ?>
 					<code><?php echo esc_html( $wpdc_code ); ?></code>
 					<br>
-					<a href="<?php echo esc_url( WPDC_Certificate::verify_url( $wpdc_code ) ); ?>" target="_blank" rel="noopener">
+					<a href="<?php echo esc_url( WPDC_Certificate::verify_url( $wpdc_code, $wpdc_template ) ); ?>" target="_blank" rel="noopener">
 						<?php esc_html_e( 'Открыть страницу проверки', 'wp-diplom' ); ?>
 					</a>
 				<?php else : ?>

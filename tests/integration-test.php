@@ -54,6 +54,26 @@ class WPDC_Plugin {
 	}
 
 	/**
+	 * Параметры бланка: значение из бланка, иначе общие настройки.
+	 *
+	 * @param int $template_id id бланка.
+	 * @return array<string, mixed>
+	 */
+	public static function params( $template_id = 0 ) {
+		$settings = self::settings();
+		$saved    = $template_id ? get_post_meta( $template_id, '_wpdc_params', true ) : array();
+		$saved    = is_array( $saved ) ? $saved : array();
+		$params   = array();
+
+		foreach ( array( 'organization', 'number_prefix', 'number_padding', 'sample_teacher', 'enable_verify', 'verify_page' ) as $key ) {
+			$value          = array_key_exists( $key, $saved ) ? $saved[ $key ] : null;
+			$params[ $key ] = ( null !== $value && '' !== trim( (string) $value ) ) ? $value : ( $settings[ $key ] ?? '' );
+		}
+
+		return $params;
+	}
+
+	/**
 	 * Каталог PDF.
 	 *
 	 * @return string
@@ -103,12 +123,12 @@ update_post_meta( $template_id, '_wpdc_fields', WPDC_Renderer::default_fields() 
 $config = WPDC_Certificate::template_config( $template_id );
 
 check( 'a4_landscape' === $config['page'], 'template_config вернул формат страницы' );
-check( 9 === count( $config['fields'] ), 'template_config вернул 9 полей' );
+check( 1 === count( $config['fields'] ), 'template_config вернул поля бланка (по умолчанию одно — name)' );
 check( true === $config['border']['enabled'], 'рамка включена' );
 check( 'Тестовый сайт' === $config['organization'], 'организация подставлена из настроек' );
 
 $fallback = WPDC_Certificate::template_config( 0 );
-check( 9 === count( $fallback['fields'] ), 'без бланка используются поля по умолчанию' );
+check( 1 === count( $fallback['fields'] ), 'без бланка используются поля по умолчанию' );
 
 // --- Нумерация ----------------------------------------------------------
 $year = current_time( 'Y' );
@@ -167,7 +187,7 @@ if ( is_string( $pdf_one ) && file_exists( $pdf_one ) ) {
 	$binary = (string) file_get_contents( $pdf_one );
 
 	check( 0 === strpos( $binary, '%PDF-1.4' ), 'файл начинается с %PDF-1.4' );
-	check( strlen( $binary ) > 300000, sprintf( 'размер PDF: %.1f КБ', strlen( $binary ) / 1024 ) );
+	check( strlen( $binary ) > 100000, sprintf( 'размер PDF: %.1f КБ', strlen( $binary ) / 1024 ) );
 	check( false !== strpos( $binary, '/ToUnicode' ), 'PDF содержит ToUnicode (кириллица извлекается)' );
 
 	$first_mtime = filemtime( $pdf_one );
@@ -207,15 +227,36 @@ check( false === strpos( $admin_source, 'wpdc_bulk' ), 'хуки admin_post_wpdc
 check( false === strpos( $admin_source, 'ZipArchive' ), 'работа с ZIP удалена' );
 check( ! file_exists( WPDC_DIR . 'admin/views/page-bulk.php' ), 'страница массовой генерации удалена' );
 
-// --- Письмо: настраивается только встроенными значениями -----------------
-$settings_view = (string) file_get_contents( WPDC_DIR . 'admin/views/page-settings.php' );
+// --- Страница настроек удалена, параметры переехали в бланк ---------------
+check( ! file_exists( WPDC_DIR . 'admin/views/page-settings.php' ), 'страница настроек удалена' );
+check( false === strpos( $admin_source, 'wpdc-settings' ), 'пункта меню «Настройки» больше нет' );
+check( false === strpos( $admin_source, 'admin_post_wpdc_save_settings' ), 'обработчик сохранения настроек удалён' );
 
-foreach ( array( 'wpdc_email_subject', 'wpdc_email_body', 'wpdc_sender_name', 'wpdc_sender_email' ) as $gone ) {
-	check( false === strpos( $settings_view, $gone ), 'в настройках нет поля ' . $gone );
+foreach ( array( 'handle_settings', 'render_settings_page' ) as $method ) {
+	check( ! method_exists( $admin, $method ), 'метода ' . $method . '() больше нет' );
 }
 
-check( false === strpos( $settings_view, 'Письмо с сертификатом' ), 'раздел «Письмо с сертификатом» удалён' );
-check( false !== strpos( $settings_view, 'wpdc_sample_teacher' ), 'поле «Преподаватель в предпросмотре» сохранено' );
+$params_view = (string) file_get_contents( WPDC_DIR . 'admin/views/meta-template-params.php' );
+
+foreach ( array( 'wpdc_params[organization]', 'wpdc_params[number_prefix]', 'wpdc_params[number_padding]', 'wpdc_params[enable_verify]', 'wpdc_params[verify_page]', 'wpdc_params[sample_teacher]', 'wpdc_is_default' ) as $field ) {
+	check( false !== strpos( $params_view, $field ), 'в параметрах бланка есть поле ' . $field );
+}
+
+// --- Поле бланка по умолчанию --------------------------------------------
+$default_fields = WPDC_Renderer::default_fields();
+
+check( 1 === count( $default_fields ), 'по умолчанию в бланке одно поле' );
+check( 'name' === $default_fields[0]['id'], 'это поле name' );
+check( '{recipient_name}' === $default_fields[0]['text'], 'поле печатает имя получателя' );
+
+// --- Параметры бланка перекрывают общие ----------------------------------
+update_post_meta( 99, '_wpdc_params', array( 'number_prefix' => 'ДИП', 'number_padding' => 3 ) );
+
+$params = WPDC_Plugin::params( 99 );
+
+check( 'ДИП' === $params['number_prefix'], 'префикс номера берётся из бланка' );
+check( 3 === (int) $params['number_padding'], 'разрядность берётся из бланка' );
+check( 'Тестовый сайт' === $params['organization'], 'пустой параметр берётся из общих настроек' );
 
 // --- Тексты сертификата: в настройках раздела больше нет ------------------
 check( false === strpos( $settings_view, 'Тексты сертификата' ), 'раздел «Тексты сертификата» удалён из настроек' );

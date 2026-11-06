@@ -170,14 +170,82 @@ final class WPDC_Plugin {
 	 * @return string[]
 	 */
 	public function action_links( $links ) {
-		$url = admin_url( 'edit.php?post_type=wpdc_template&page=wpdc-settings' );
+		$url = admin_url( 'edit.php?post_type=wpdc_template' );
 
 		array_unshift(
 			$links,
-			sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html__( 'Настройки', 'wp-diplom' ) )
+			sprintf( '<a href="%s">%s</a>', esc_url( $url ), esc_html__( 'Бланки', 'wp-diplom' ) )
 		);
 
 		return $links;
+	}
+
+	/**
+	 * Параметры, которые задаются в бланке (сохраняются в _wpdc_params).
+	 *
+	 * @var string[]
+	 */
+	const PARAM_KEYS = array( 'organization', 'number_prefix', 'number_padding', 'sample_teacher', 'enable_verify', 'verify_page' );
+
+	/**
+	 * Параметры бланка: значение из бланка, иначе сохранённое ранее общее.
+	 *
+	 * @param int $template_id id бланка.
+	 * @return array<string, mixed>
+	 */
+	public static function params( $template_id = 0 ) {
+		$template_id = absint( $template_id );
+		$settings    = self::settings();
+		$saved       = $template_id ? get_post_meta( $template_id, '_wpdc_params', true ) : array();
+		$saved       = is_array( $saved ) ? $saved : array();
+		$params      = array();
+
+		foreach ( self::PARAM_KEYS as $key ) {
+			$value = array_key_exists( $key, $saved ) ? $saved[ $key ] : null;
+
+			if ( null !== $value && '' !== trim( (string) $value ) ) {
+				$params[ $key ] = $value;
+				continue;
+			}
+
+			$params[ $key ] = $settings[ $key ] ?? '';
+		}
+
+		return $params;
+	}
+
+	/**
+	 * Очистка параметров бланка (форма из админки).
+	 *
+	 * @param mixed $raw Сырые данные.
+	 * @return array<string, mixed>
+	 */
+	public static function sanitize_params( $raw ) {
+		$raw = is_array( $raw ) ? $raw : array();
+
+		return array(
+			'organization'   => sanitize_text_field( wp_unslash( (string) ( $raw['organization'] ?? '' ) ) ),
+			'number_prefix'  => sanitize_text_field( wp_unslash( (string) ( $raw['number_prefix'] ?? '' ) ) ),
+			'number_padding' => max( 1, min( 10, absint( $raw['number_padding'] ?? 4 ) ) ),
+			'sample_teacher' => sanitize_text_field( wp_unslash( (string) ( $raw['sample_teacher'] ?? '' ) ) ),
+			'enable_verify'  => empty( $raw['enable_verify'] ) ? 0 : 1,
+			'verify_page'    => absint( $raw['verify_page'] ?? 0 ),
+		);
+	}
+
+	/**
+	 * Бланк по умолчанию для новых сертификатов.
+	 *
+	 * @param int $template_id id бланка (0 — снять отметку).
+	 */
+	public static function set_default_template( $template_id ) {
+		$stored = get_option( 'wpdc_settings', array() );
+		$stored = is_array( $stored ) ? $stored : array();
+
+		// Меняем только указатель: остальные сохранённые значения не трогаем.
+		$stored['default_template'] = absint( $template_id );
+
+		update_option( 'wpdc_settings', $stored );
 	}
 
 	/**

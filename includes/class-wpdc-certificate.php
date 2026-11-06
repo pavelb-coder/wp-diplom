@@ -82,7 +82,7 @@ class WPDC_Certificate {
 			'background_color' => (string) ( $template_id ? get_post_meta( $template_id, '_wpdc_background_color', true ) : '#ffffff' ),
 			'background_fit'   => (string) ( $template_id ? get_post_meta( $template_id, '_wpdc_background_fit', true ) : 'cover' ),
 			'organization'     => (string) ( $template_id ? get_post_meta( $template_id, '_wpdc_organization', true ) : '' )
-				?: (string) $settings['organization'],
+				?: (string) ( $template_id ? WPDC_Plugin::params( $template_id )['organization'] : $settings['organization'] ),
 			'document_title'   => (string) ( $template_id ? get_post_meta( $template_id, '_wpdc_document_title', true ) : '' )
 				?: __( 'Сертификат', 'wp-diplom' ),
 			'border'           => $border,
@@ -114,7 +114,7 @@ class WPDC_Certificate {
 			'teacher'         => (string) get_post_meta( $post_id, '_wpdc_teacher', true ),
 			'date'            => self::format_date( $date ),
 			'number'          => (string) get_post_meta( $post_id, '_wpdc_number', true ),
-			'organization'    => (string) WPDC_Plugin::settings( 'organization' ),
+			'organization'    => (string) WPDC_Plugin::params( absint( get_post_meta( $post_id, '_wpdc_template', true ) ) )['organization'],
 			'site_name'       => (string) get_bloginfo( 'name' ),
 			'code'            => $code,
 			'custom'          => is_array( $custom ) ? $custom : array(),
@@ -142,10 +142,10 @@ class WPDC_Certificate {
 	 *
 	 * @return string
 	 */
-	public static function next_number() {
-		$settings = WPDC_Plugin::settings();
-		$prefix   = sanitize_text_field( (string) $settings['number_prefix'] );
-		$padding  = max( 1, min( 10, (int) $settings['number_padding'] ) );
+	public static function next_number( $template_id = 0 ) {
+		$params  = WPDC_Plugin::params( $template_id );
+		$prefix  = sanitize_text_field( (string) $params['number_prefix'] );
+		$padding = max( 1, min( 10, (int) $params['number_padding'] ) );
 		$year     = (int) current_time( 'Y' );
 		$option   = 'wpdc_number_counter_' . $year;
 
@@ -190,6 +190,10 @@ class WPDC_Certificate {
 		}
 
 		$number = trim( (string) ( $args['number'] ?? '' ) );
+
+		if ( '' === $number ) {
+			$number = self::next_number( $template_id );
+		}
 		$date   = (string) ( $args['date'] ?? '' );
 
 		if ( '' === $date ) {
@@ -207,10 +211,6 @@ class WPDC_Certificate {
 
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
-		}
-
-		if ( '' === $number ) {
-			$number = self::next_number();
 		}
 
 		$custom = array();
@@ -357,9 +357,8 @@ class WPDC_Certificate {
 	 * @param string $code Код.
 	 * @return string
 	 */
-	public static function verify_url( $code ) {
-		$settings = WPDC_Plugin::settings();
-		$page_id  = absint( $settings['verify_page'] ?? 0 );
+	public static function verify_url( $code, $template_id = 0 ) {
+		$page_id = absint( WPDC_Plugin::params( $template_id )['verify_page'] );
 
 		if ( $page_id ) {
 			return add_query_arg( 'wpdc_code', $code, get_permalink( $page_id ) );

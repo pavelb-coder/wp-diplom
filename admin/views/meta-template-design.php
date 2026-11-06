@@ -8,7 +8,6 @@
  * @var int    $background id изображения фона.
  * @var string $color      Цвет фона.
  * @var string $fit        Режим вписывания фона.
- * @var string $org        Название организации.
  * @var string $title      Тип документа.
  * @var array  $border     Настройки рамки.
  * @var int    $pdf_id     id вложения с PDF-шаблоном.
@@ -171,20 +170,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 					value="<?php echo esc_attr( $color ? $color : '#ffffff' ); ?>">
 				<p class="description">
 					<?php esc_html_e( 'Виден там, где фон не покрывает страницу (или если фон не выбран).', 'wp-diplom' ); ?>
-				</p>
-			</td>
-		</tr>
-
-		<tr>
-			<th scope="row">
-				<label for="wpdc_organization"><?php esc_html_e( 'Организация', 'wp-diplom' ); ?></label>
-			</th>
-			<td>
-				<input type="text" class="regular-text" name="wpdc_organization" id="wpdc_organization"
-					value="<?php echo esc_attr( $org ); ?>"
-					placeholder="<?php echo esc_attr( WPDC_Plugin::settings( 'organization' ) ); ?>">
-				<p class="description">
-					<?php esc_html_e( 'Подставляется в плейсхолдер {organization}. Пустое значение — берётся из настроек плагина.', 'wp-diplom' ); ?>
 				</p>
 			</td>
 		</tr>

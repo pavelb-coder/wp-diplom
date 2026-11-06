@@ -42,7 +42,8 @@ class WPDC_Email {
 	public static function email_data( $post_id ) {
 		$data = WPDC_Certificate::data( $post_id );
 
-		$data['verify_url'] = WPDC_Certificate::verify_url( $data['code'] );
+		$template_id        = absint( get_post_meta( $post_id, '_wpdc_template', true ) );
+		$data['verify_url'] = WPDC_Certificate::verify_url( $data['code'], $template_id );
 		$data['site_url']   = home_url( '/' );
 
 		return $data;

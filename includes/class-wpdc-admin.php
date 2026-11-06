@@ -14,19 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WPDC_Admin {
 
-	/**
-	 * Настройки письма, которые больше не редактируются в интерфейсе.
-	 *
-	 * @var string[]
-	 */
-	const EMAIL_KEYS = array( 'email_subject', 'email_body', 'sender_name', 'sender_email' );
-
 
 	/**
 	 * Хуки.
 	 */
 	public function hooks() {
-		add_action( 'admin_menu', array( $this, 'menu' ) );
 		add_action( 'admin_notices', array( $this, 'activation_notice' ) );
 		add_action( 'admin_notices', array( $this, 'creation_hint' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
@@ -43,7 +35,6 @@ class WPDC_Admin {
 		add_action( 'admin_post_wpdc_download', array( $this, 'handle_download' ) );
 		add_action( 'admin_post_wpdc_preview', array( $this, 'handle_preview' ) );
 		add_action( 'admin_post_wpdc_send', array( $this, 'handle_send' ) );
-		add_action( 'admin_post_wpdc_save_settings', array( $this, 'handle_settings' ) );
 	}
 
 	/* --------------------------------------------------------------------- */
@@ -107,20 +98,6 @@ class WPDC_Admin {
 	}
 
 	/**
-	 * Подменю.
-	 */
-	public function menu() {
-		add_submenu_page(
-			'edit.php?post_type=wpdc_certificate',
-			__( 'Настройки сертификатов', 'wp-diplom' ),
-			__( 'Настройки', 'wp-diplom' ),
-			'manage_options',
-			'wpdc-settings',
-			array( $this, 'render_settings_page' )
-		);
-	}
-
-	/**
 	 * Стили и скрипты админки.
 	 *
 	 * @param string $hook Текущий экран.
@@ -179,6 +156,15 @@ class WPDC_Admin {
 			'wpdc_template',
 			'normal',
 			'high'
+		);
+
+		add_meta_box(
+			'wpdc_template_params',
+			__( 'Параметры бланка', 'wp-diplom' ),
+			array( $this, 'render_template_params_box' ),
+			'wpdc_template',
+			'normal',
+			'default'
 		);
 
 		add_meta_box(
@@ -260,6 +246,19 @@ class WPDC_Admin {
 	 *
 	 * @param WP_Post $post Запись.
 	 */
+	public function render_template_params_box( $post ) {
+		wp_nonce_field( 'wpdc_save_template', 'wpdc_template_nonce_params' );
+
+		$stored = get_post_meta( $post->ID, '_wpdc_params', true );
+		$saved  = is_array( $stored ) ? $stored : array();
+		$params = WPDC_Plugin::params( $post->ID );
+		$pages  = get_pages();
+		$is_default = (int) WPDC_Plugin::settings( 'default_template' ) === (int) $post->ID;
+		$post_id    = $post->ID;
+
+		include WPDC_DIR . 'admin/views/meta-template-params.php';
+	}
+
 	public function render_template_texts_box( $post ) {
 		wp_nonce_field( 'wpdc_save_template', 'wpdc_template_nonce_texts' );
 
@@ -512,7 +511,6 @@ class WPDC_Admin {
 
 		update_post_meta( $post_id, '_wpdc_background_fit', in_array( $fit, array( 'cover', 'contain', 'stretch' ), true ) ? $fit : 'cover' );
 
-		update_post_meta( $post_id, '_wpdc_organization', sanitize_text_field( wp_unslash( $_POST['wpdc_organization'] ?? '' ) ) );
 		update_post_meta( $post_id, '_wpdc_document_title', sanitize_text_field( wp_unslash( $_POST['wpdc_document_title'] ?? '' ) ) );
 
 		update_post_meta(
@@ -526,6 +524,19 @@ class WPDC_Admin {
 				'inset_y' => max( 0, min( 100, (float) ( $_POST['wpdc_border_inset_y'] ?? 12 ) ) ),
 			)
 		);
+
+		// Параметры бланка.
+		if ( isset( $_POST['wpdc_params'] ) && is_array( $_POST['wpdc_params'] ) ) {
+			$params = WPDC_Plugin::sanitize_params( wp_unslash( $_POST['wpdc_params'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+			update_post_meta( $post_id, '_wpdc_params', $params );
+			// Организацию дублируем в старый ключ: его читает шапка бланка.
+			update_post_meta( $post_id, '_wpdc_organization', $params['organization'] );
+		}
+
+		if ( isset( $_POST['wpdc_is_default'] ) ) {
+			WPDC_Plugin::set_default_template( empty( $_POST['wpdc_is_default'] ) ? 0 : $post_id );
+		}
 
 		// Тексты бланка: пустое значение = «как в настройках».
 		if ( isset( $_POST['wpdc_text'] ) ) {
@@ -807,8 +818,7 @@ class WPDC_Admin {
 			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
 		}
 
-		$settings = WPDC_Plugin::settings();
-
+		$params   = WPDC_Plugin::params( $template_id );
 		$template = WPDC_Certificate::template_config( $template_id );
 
 		$sample = array(
@@ -816,10 +826,10 @@ class WPDC_Admin {
 			'recipient_email' => 'anna@example.com',
 			'course_title'    => __( 'Веб-разработка на WordPress', 'wp-diplom' ),
 			'course_hours'    => '72',
-			'teacher'         => $settings['sample_teacher'] ? $settings['sample_teacher'] : __( 'Иванов И. И.', 'wp-diplom' ),
+			'teacher'         => $params['sample_teacher'] ? $params['sample_teacher'] : __( 'Иванов И. И.', 'wp-diplom' ),
 			'date'            => WPDC_Certificate::format_date( current_time( 'Y-m-d' ) ),
 			'number'          => 'WPD-' . current_time( 'Y' ) . '-0001',
-			'organization'    => $settings['organization'],
+			'organization'    => $params['organization'],
 			'site_name'       => get_bloginfo( 'name' ),
 			'code'            => 'demo123456',
 			'custom'          => array( 'group' => 'ВР-21' ),
@@ -869,83 +879,6 @@ class WPDC_Admin {
 			)
 		);
 		exit;
-	}
-
-	/**
-	 * Сохранение настроек.
-	 */
-	public function handle_settings() {
-		check_admin_referer( 'wpdc_save_settings' );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
-		}
-
-		$settings = array(
-			'organization'     => sanitize_text_field( wp_unslash( $_POST['wpdc_organization'] ?? '' ) ),
-			'default_template' => absint( $_POST['wpdc_default_template'] ?? 0 ),
-			'number_prefix'    => sanitize_text_field( wp_unslash( $_POST['wpdc_number_prefix'] ?? 'WPD' ) ),
-			'number_padding'   => max( 1, min( 10, absint( $_POST['wpdc_number_padding'] ?? 4 ) ) ),
-			'verify_page'      => absint( $_POST['wpdc_verify_page'] ?? 0 ),
-			'enable_verify'    => empty( $_POST['wpdc_enable_verify'] ) ? 0 : 1,
-			'sample_teacher'   => sanitize_text_field( wp_unslash( $_POST['wpdc_sample_teacher'] ?? '' ) ),
-		);
-
-		// Письмо больше не настраивается в интерфейсе, но уже сохранённые
-		// значения не затираем: они продолжают действовать.
-		$existing = get_option( 'wpdc_settings', array() );
-		$existing = is_array( $existing ) ? $existing : array();
-
-		foreach ( self::EMAIL_KEYS as $key ) {
-			if ( isset( $existing[ $key ] ) && '' !== trim( (string) $existing[ $key ] ) ) {
-				$settings[ $key ] = $existing[ $key ];
-			}
-		}
-
-		// Общие тексты сертификата в интерфейсе больше не редактируются,
-		// но сохранённые значения продолжают действовать.
-		if ( isset( $existing['texts'] ) && is_array( $existing['texts'] ) && $existing['texts'] ) {
-			$settings['texts'] = WPDC_Texts::sanitize( $existing['texts'] );
-		}
-
-		update_option( 'wpdc_settings', $settings );
-
-		wp_safe_redirect(
-			add_query_arg(
-				array(
-					'page'       => 'wpdc-settings',
-					'wpdc_notice' => 'wpdc-settings-saved',
-				),
-				admin_url( 'edit.php?post_type=wpdc_certificate' )
-			)
-		);
-		exit;
-	}
-
-	/* --------------------------------------------------------------------- */
-	/* Страницы                                                               */
-	/* --------------------------------------------------------------------- */
-
-	/**
-	 * Страница настроек.
-	 */
-	public function render_settings_page() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
-		}
-
-		$settings  = WPDC_Plugin::settings();
-		$templates = get_posts(
-			array(
-				'post_type'      => 'wpdc_template',
-				'posts_per_page' => -1,
-				'post_status'    => 'publish',
-			)
-		);
-
-		$pages = get_pages();
-
-		include WPDC_DIR . 'admin/views/page-settings.php';
 	}
 
 	/* --------------------------------------------------------------------- */

@@ -76,7 +76,7 @@ $template = WPDC_Renderer::normalize_template(
 	)
 );
 
-check( 9 === count( $template['fields'] ), 'бланк по умолчанию содержит 9 полей' );
+check( 1 === count( $template['fields'] ), 'бланк по умолчанию содержит одно поле (name)' );
 check( true === $template['border']['enabled'], 'рамка включена по умолчанию' );
 check( '#ffffff' === $template['background_color'], 'фон по умолчанию белый' );
 
@@ -97,7 +97,7 @@ $renderer = new WPDC_Renderer();
 $pdf_binary = $renderer->render( $template, $data );
 
 check( 0 === strpos( $pdf_binary, '%PDF-1.4' ), 'PDF сгенерирован из бланка по умолчанию' );
-check( strlen( $pdf_binary ) > 500000, sprintf( 'размер PDF = %d байт', strlen( $pdf_binary ) ) );
+check( strlen( $pdf_binary ) > 100000, sprintf( 'размер PDF = %d байт', strlen( $pdf_binary ) ) );
 
 file_put_contents( $output, $pdf_binary );
 check( file_exists( $output ), 'файл записан: ' . $output );

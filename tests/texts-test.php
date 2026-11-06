@@ -96,12 +96,16 @@ foreach ( WPDC_Renderer::default_fields() as $field ) {
 	$field_ids[] = (string) $field['id'];
 }
 
-// Слоты-значения (название курса) полей не имеют: они подставляются в текст.
-$phrase_slots = array_diff( array_keys( WPDC_Texts::SLOTS ), WPDC_Texts::VALUE_SLOTS );
-$missing      = array_diff( $phrase_slots, $field_ids );
+// Поля бланка по умолчанию: одно — name.
+check( array( 'name' ) === $field_ids, 'по умолчанию в бланке одно поле name' );
 
-check( empty( $missing ), 'каждый слот-фраза есть среди полей бланка' . ( $missing ? ': ' . implode( ', ', $missing ) : '' ) );
+// Слоты-фразы остаются реестром текста: они применяются к полю с тем же id,
+// если такое поле добавлено в бланк.
+$phrase_slots = array_diff( array_keys( WPDC_Texts::SLOTS ), WPDC_Texts::VALUE_SLOTS );
+
+check( 8 === count( $phrase_slots ), 'слотов-фраз восемь' );
 check( ! in_array( 'course_title', $field_ids, true ), 'у названия курса нет собственного поля на бланке' );
+check( WPDC_Texts::is_slot( 'title' ) && WPDC_Texts::is_slot( 'course' ), 'фразы бланка остались в реестре' );
 
 // --- 2. Старшинство -----------------------------------------------------
 set_global_texts( array( 'course' => 'Глобальная фраза' ) );

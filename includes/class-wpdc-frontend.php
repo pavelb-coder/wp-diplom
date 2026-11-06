@@ -50,13 +50,15 @@ class WPDC_Frontend {
 			return;
 		}
 
-		$settings = WPDC_Plugin::settings();
-
-		if ( empty( $settings['enable_verify'] ) ) {
-			wp_die( esc_html__( 'Проверка сертификатов отключена.', 'wp-diplom' ), 404 );
-		}
-
 		$post = WPDC_Certificate::by_code( $code );
+
+		if ( $post ) {
+			$params = WPDC_Plugin::params( absint( get_post_meta( $post->ID, '_wpdc_template', true ) ) );
+
+			if ( empty( $params['enable_verify'] ) ) {
+				wp_die( esc_html__( 'Проверка сертификатов отключена.', 'wp-diplom' ), 404 );
+			}
+		}
 
 		if ( ! $post ) {
 			status_header( 404 );
