@@ -1,0 +1,27 @@
+# OS / редакторы
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Node (если появятся сборщики)
+node_modules/
+npm-debug.log*
+yarn-error.log
+package-lock.json
+
+# Composer
+vendor/
+composer.lock
+
+# Сборка и временные файлы
+dist/
+build/
+*.zip
+*.log
+.cache/
+
+# Локальные конфиги, не предназначенные для репозитория
+.env
+.env.*
