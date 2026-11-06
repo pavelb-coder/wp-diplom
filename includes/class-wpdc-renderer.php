@@ -99,6 +99,16 @@ class WPDC_Renderer {
 		$template = self::normalize_template( $template );
 		$data     = self::normalize_data( $data );
 
+		// Название курса можно задать в бланке — тогда оно подставляется в
+		// {course_title}, если в карточке сертификата поле не заполнено.
+		if ( '' === trim( (string) $data['course_title'] ) && class_exists( 'WPDC_Texts' ) ) {
+			$texts = WPDC_Texts::resolve( $template['texts'] );
+
+			if ( ! empty( $texts['course_title'] ) ) {
+				$data['course_title'] = $texts['course_title'];
+			}
+		}
+
 		list( $width_mm, $height_mm ) = self::page_size( $template['page'], $template );
 
 		$pdf = new WPDC_PDF_Writer( $this->fonts() );
@@ -387,7 +397,6 @@ class WPDC_Renderer {
 			'{number}'          => __( 'Номер сертификата', 'wp-diplom' ),
 			'{organization}'    => __( 'Название организации', 'wp-diplom' ),
 			'{site_name}'       => __( 'Название сайта', 'wp-diplom' ),
-			'{code}'            => __( 'Код проверки', 'wp-diplom' ),
 			'{custom_КЛЮЧ}'     => __( 'Дополнительное поле сертификата', 'wp-diplom' ),
 		);
 	}

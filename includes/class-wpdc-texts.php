@@ -38,7 +38,26 @@ class WPDC_Texts {
 		'number'    => 'Номер документа',
 		'signature' => 'Подпись',
 		'verify'    => 'Проверка подлинности',
+		'course_title' => 'Название курса/программы',
 	);
+
+	/**
+	 * Слоты-значения: не рисуются как отдельная фраза, а подставляются в
+	 * одноимённый плейсхолдер, когда в карточке сертификата поле пустое.
+	 *
+	 * @var string[]
+	 */
+	const VALUE_SLOTS = array( 'course_title' );
+
+	/**
+	 * Слот — это значение, а не фраза бланка.
+	 *
+	 * @param string $slot Слот.
+	 * @return bool
+	 */
+	public static function is_value_slot( $slot ) {
+		return in_array( (string) $slot, self::VALUE_SLOTS, true );
+	}
 
 	/**
 	 * Встроенные значения по умолчанию.
@@ -55,6 +74,7 @@ class WPDC_Texts {
 			'number'    => '№ {number}',
 			'signature' => '{teacher}',
 			'verify'    => 'Проверить подлинность: {code}',
+			'course_title' => '',
 		);
 	}
 

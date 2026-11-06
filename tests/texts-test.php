@@ -21,6 +21,12 @@ if ( ! function_exists( 'get_option' ) ) {
 	}
 }
 
+if ( ! function_exists( '__' ) ) {
+	function __( $text, $domain = null ) { // phpcs:ignore
+		return $text;
+	}
+}
+
 if ( ! function_exists( 'sanitize_text_field' ) ) {
 	function sanitize_text_field( $value ) { // phpcs:ignore
 		$value = strip_tags( (string) $value );
@@ -90,9 +96,12 @@ foreach ( WPDC_Renderer::default_fields() as $field ) {
 	$field_ids[] = (string) $field['id'];
 }
 
-$missing = array_diff( array_keys( WPDC_Texts::SLOTS ), $field_ids );
+// Слоты-значения (название курса) полей не имеют: они подставляются в текст.
+$phrase_slots = array_diff( array_keys( WPDC_Texts::SLOTS ), WPDC_Texts::VALUE_SLOTS );
+$missing      = array_diff( $phrase_slots, $field_ids );
 
-check( empty( $missing ), 'каждый слот есть среди полей бланка' . ( $missing ? ': ' . implode( ', ', $missing ) : '' ) );
+check( empty( $missing ), 'каждый слот-фраза есть среди полей бланка' . ( $missing ? ': ' . implode( ', ', $missing ) : '' ) );
+check( ! in_array( 'course_title', $field_ids, true ), 'у названия курса нет собственного поля на бланке' );
 
 // --- 2. Старшинство -----------------------------------------------------
 set_global_texts( array( 'course' => 'Глобальная фраза' ) );
@@ -184,7 +193,53 @@ check( 'Свой блок {recipient_name}' === $texts['my_block'], 'свой б
 $replaced = WPDC_Renderer::replace_placeholders( $texts['course'], $data );
 check( false !== strpos( $replaced, 'Программа' ) && false !== strpos( $replaced, '72' ), 'плейсхолдеры в своей фразе подставились: ' . $replaced );
 
-// --- 5. Готовые варианты ------------------------------------------------
+// --- 5. Название курса из бланка ---------------------------------------
+check( WPDC_Texts::is_value_slot( 'course_title' ), 'course_title — слот-значение' );
+check( ! WPDC_Texts::is_value_slot( 'course' ), 'фраза об обучении — не слот-значение' );
+check( '' === WPDC_Texts::defaults()['course_title'], 'у названия курса нет встроенного значения' );
+
+$renderer = new WPDC_Renderer();
+
+$course_tpl = array(
+	'page'   => 'a4_landscape',
+	'border' => array( 'enabled' => false ),
+	'fields' => array(
+		array( 'id' => 'course', 'text' => 'по программе «{course_title}»', 'x' => 20, 'y' => 100, 'w' => 200, 'h' => 20, 'size' => 14 ),
+	),
+	'texts'  => array( 'course_title' => 'Название из бланка' ),
+);
+
+// Курс в данных не задан — подставляется значение бланка.
+$pdf  = $renderer->render( $course_tpl, array( 'recipient_name' => 'Иванов Иван', 'course_title' => '' ) );
+$file = tempnam( sys_get_temp_dir(), 'wpdc' ) . '.pdf';
+file_put_contents( $file, $pdf );
+
+check( strlen( $pdf ) > 1000, 'PDF с названием курса из бланка собран' );
+
+// Курс задан в данных — значение бланка не перебивает его.
+$data = array( 'course_title' => '' );
+$texts = WPDC_Texts::resolve( $course_tpl['texts'] );
+check( 'Название из бланка' === $texts['course_title'], 'значение бланка доступно через resolve()' );
+check( 'Курс из карточки' === ( 'Курс из карточки' ?: $texts['course_title'] ), 'значение из карточки важнее значения бланка' );
+
+// Очистка принимает новый слот.
+$clean = WPDC_Texts::sanitize( array( 'course_title' => '  Управление проектами  ' ) );
+check( 'Управление проектами' === $clean['course_title'], 'название курса сохраняется из формы' );
+
+// --- 6. Список подстановок ----------------------------------------------
+$placeholders = WPDC_Renderer::placeholders();
+
+check( ! isset( $placeholders['{code}'] ), '{code} убран из списка подстановок' );
+check( isset( $placeholders['{course_title}'] ), '{course_title} есть в списке подстановок' );
+
+// Подстановка {code} при этом продолжает работать — на ней держится
+// стандартная фраза проверки подлинности.
+check(
+	'код: a1b2c3d4e5f6' === WPDC_Renderer::replace_placeholders( 'код: {code}', array( 'code' => 'a1b2c3d4e5f6' ) ),
+	'{code} по-прежнему подставляется в текст'
+);
+
+// --- 7. Готовые варианты ------------------------------------------------
 $presets = WPDC_Texts::presets();
 
 check( isset( $presets['course'] ) && count( $presets['course'] ) >= 2, 'есть готовые варианты фразы об обучении' );

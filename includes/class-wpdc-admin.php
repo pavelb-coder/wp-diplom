@@ -825,6 +825,13 @@ class WPDC_Admin {
 			'custom'          => array( 'group' => 'ВР-21' ),
 		);
 
+		// Если название курса задано в бланке — показываем его в предпросмотре.
+		$texts = WPDC_Texts::resolve( isset( $template['texts'] ) ? (array) $template['texts'] : array() );
+
+		if ( ! empty( $texts['course_title'] ) ) {
+			$sample['course_title'] = $texts['course_title'];
+		}
+
 		try {
 			$renderer = new WPDC_Renderer();
 			$binary   = $renderer->render( $template, $sample );

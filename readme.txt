@@ -4,7 +4,7 @@ Tags: certificates, diploma, pdf, awards, education
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -32,11 +32,12 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 * Пустое поле означает «как по умолчанию»: действует текст поля бланка, а если его нет — встроенная фраза.
 * Готовые варианты формулировок подставляются в один клик.
 * Свои блоки текста: произвольное содержание или плейсхолдер со своим положением, кеглем и цветом.
+* Название курса/программы можно задать в бланке — оно подставится вместо {course_title}, если в карточке сертификата курс не заполнен.
 * Старшинство: бланк → текст поля → встроенное значение.
 
 **Плейсхолдеры**
 
-`{recipient_name}`, `{recipient_email}`, `{course_title}`, `{course_hours}`, `{teacher}`, `{date}`, `{number}`, `{organization}`, `{site_name}`, `{code}`, а также `{custom_КЛЮЧ}` для произвольных полей сертификата.
+`{recipient_name}`, `{recipient_email}`, `{course_title}`, `{course_hours}`, `{teacher}`, `{date}`, `{number}`, `{organization}`, `{site_name}`, а также `{custom_КЛЮЧ}` для произвольных полей сертификата.
 
 **Выдача сертификатов**
 
@@ -86,6 +87,10 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 1. Сертификат, сгенерированный плагином на бланке по умолчанию.
 
 == Changelog ==
+
+= 1.7.0 =
+* Добавлено: поле «Название курса/программы» в блоке «Тексты бланка» — подставляется вместо {course_title}.
+* Удалено: {code} из списка подстановок.
 
 = 1.6.0 =
 * Удалено: раздел «Тексты сертификата» в настройках плагина.

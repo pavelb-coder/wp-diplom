@@ -24,6 +24,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<?php esc_html_e( 'Эти фразы подставляются в документ автоматически — и при предпросмотре, и при выдаче сертификата. Пустое поле означает «как по умолчанию»: действует текст поля бланка, а если его нет — встроенная фраза.', 'wp-diplom' ); ?>
 </p>
 
+<p class="description wpdc-texts-intro">
+	<?php esc_html_e( 'Название курса/программы можно задать здесь — тогда оно подставится вместо {course_title} во всех фразах бланка. Если поле пустое, берётся значение из карточки сертификата.', 'wp-diplom' ); ?>
+</p>
+
 <table class="form-table wpdc-form-table wpdc-texts-table" role="presentation">
 	<tbody>
 		<?php foreach ( $slots as $slot => $label ) : ?>
@@ -33,6 +37,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 			$from_glob  = isset( $global[ $slot ] ) ? $global[ $slot ] : '';
 			$variants   = isset( $presets[ $slot ] ) ? $presets[ $slot ] : array();
 			$field_name = 'wpdc_text[' . $slot . ']';
+			$is_value   = WPDC_Texts::is_value_slot( $slot );
+			$hint       = $is_value
+				? __( 'Например: Веб-разработка на WordPress', 'wp-diplom' )
+				: $value;
 			?>
 			<tr>
 				<th scope="row">
@@ -47,8 +55,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 						id="wpdc_text_<?php echo esc_attr( $slot ); ?>"
 						name="<?php echo esc_attr( $field_name ); ?>"
 						data-slot="<?php echo esc_attr( $slot ); ?>"
-						placeholder="<?php echo esc_attr( $value ); ?>"><?php echo esc_textarea( $override ); ?></textarea>
+						placeholder="<?php echo esc_attr( $hint ); ?>"><?php echo esc_textarea( $override ); ?></textarea>
 
+					<?php if ( $is_value ) : ?>
+						<p class="wpdc-texts-hint description">
+							<?php if ( '' === $override ) : ?>
+								<?php esc_html_e( 'Сейчас берётся из карточки сертификата.', 'wp-diplom' ); ?>
+							<?php else : ?>
+								<span class="wpdc-texts-own">
+									<?php esc_html_e( 'Своё название для этого бланка — подставляется вместо {course_title}.', 'wp-diplom' ); ?>
+								</span>
+							<?php endif; ?>
+						</p>
+					<?php else : ?>
 					<p class="wpdc-texts-hint description">
 						<?php if ( '' === $override ) : ?>
 							<span class="wpdc-texts-inherited">
@@ -66,6 +85,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 							</span>
 						<?php endif; ?>
 					</p>
+					<?php endif; ?>
 
 					<?php if ( $variants ) : ?>
 						<p class="wpdc-texts-presets">
