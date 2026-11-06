@@ -41,15 +41,15 @@ $render_row = static function ( $field, $index ) {
 		$field
 	);
 
-	$name = 'wpd_field[' . (int) $index . ']';
+	$name = 'wpdc_field[' . (int) $index . ']';
 	?>
-	<tr class="wpd-field-row">
-		<td class="wpd-field-row__handle" title="<?php esc_attr_e( 'Перетащите, чтобы изменить порядок', 'wp-diplom' ); ?>">
+	<tr class="wpdc-field-row">
+		<td class="wpdc-field-row__handle" title="<?php esc_attr_e( 'Перетащите, чтобы изменить порядок', 'wp-diplom' ); ?>">
 			<span class="dashicons dashicons-menu"></span>
 		</td>
 
 		<td>
-			<input type="text" class="widefat wpd-field-id" name="<?php echo esc_attr( $name ); ?>[id]"
+			<input type="text" class="widefat wpdc-field-id" name="<?php echo esc_attr( $name ); ?>[id]"
 				value="<?php echo esc_attr( $field['id'] ); ?>" placeholder="title">
 		</td>
 
@@ -58,11 +58,11 @@ $render_row = static function ( $field, $index ) {
 				placeholder="<?php esc_attr_e( 'Текст или {recipient_name}', 'wp-diplom' ); ?>"><?php echo esc_textarea( $field['text'] ); ?></textarea>
 		</td>
 
-		<td><input type="number" step="0.5" class="wpd-num" name="<?php echo esc_attr( $name ); ?>[x]" value="<?php echo esc_attr( $field['x'] ); ?>"></td>
-		<td><input type="number" step="0.5" class="wpd-num" name="<?php echo esc_attr( $name ); ?>[y]" value="<?php echo esc_attr( $field['y'] ); ?>"></td>
-		<td><input type="number" step="0.5" class="wpd-num" name="<?php echo esc_attr( $name ); ?>[w]" value="<?php echo esc_attr( $field['w'] ); ?>"></td>
-		<td><input type="number" step="0.5" class="wpd-num" name="<?php echo esc_attr( $name ); ?>[h]" value="<?php echo esc_attr( $field['h'] ); ?>"></td>
-		<td><input type="number" step="0.5" class="wpd-num" name="<?php echo esc_attr( $name ); ?>[size]" value="<?php echo esc_attr( $field['size'] ); ?>"></td>
+		<td><input type="number" step="0.5" class="wpdc-num" name="<?php echo esc_attr( $name ); ?>[x]" value="<?php echo esc_attr( $field['x'] ); ?>"></td>
+		<td><input type="number" step="0.5" class="wpdc-num" name="<?php echo esc_attr( $name ); ?>[y]" value="<?php echo esc_attr( $field['y'] ); ?>"></td>
+		<td><input type="number" step="0.5" class="wpdc-num" name="<?php echo esc_attr( $name ); ?>[w]" value="<?php echo esc_attr( $field['w'] ); ?>"></td>
+		<td><input type="number" step="0.5" class="wpdc-num" name="<?php echo esc_attr( $name ); ?>[h]" value="<?php echo esc_attr( $field['h'] ); ?>"></td>
+		<td><input type="number" step="0.5" class="wpdc-num" name="<?php echo esc_attr( $name ); ?>[size]" value="<?php echo esc_attr( $field['size'] ); ?>"></td>
 
 		<td>
 			<select name="<?php echo esc_attr( $name ); ?>[font]">
@@ -88,7 +88,7 @@ $render_row = static function ( $field, $index ) {
 
 		<td><input type="color" name="<?php echo esc_attr( $name ); ?>[color]" value="<?php echo esc_attr( $field['color'] ); ?>"></td>
 
-		<td class="wpd-field-row__flags">
+		<td class="wpdc-field-row__flags">
 			<label title="<?php esc_attr_e( 'Верхний регистр', 'wp-diplom' ); ?>">
 				<input type="checkbox" name="<?php echo esc_attr( $name ); ?>[uppercase]" value="1" <?php checked( ! empty( $field['uppercase'] ) ); ?>>
 				AA
@@ -100,7 +100,7 @@ $render_row = static function ( $field, $index ) {
 		</td>
 
 		<td>
-			<button type="button" class="button-link wpd-remove-field" title="<?php esc_attr_e( 'Удалить поле', 'wp-diplom' ); ?>">
+			<button type="button" class="button-link wpdc-remove-field" title="<?php esc_attr_e( 'Удалить поле', 'wp-diplom' ); ?>">
 				<span class="dashicons dashicons-trash"></span>
 			</button>
 		</td>
@@ -108,13 +108,13 @@ $render_row = static function ( $field, $index ) {
 	<?php
 };
 ?>
-<div class="wpd-fields">
+<div class="wpdc-fields">
 	<p class="description">
 		<?php esc_html_e( 'Каждое поле — прямоугольник на бланке. Координаты и размеры в миллиметрах, кегль в пунктах (pt). Текст центрируется по вертикали внутри своей области.', 'wp-diplom' ); ?>
 	</p>
 
-	<div class="wpd-fields__scroll">
-		<table class="widefat wpd-fields-table">
+	<div class="wpdc-fields__scroll">
+		<table class="widefat wpdc-fields-table">
 			<thead>
 				<tr>
 					<th></th>
@@ -134,7 +134,7 @@ $render_row = static function ( $field, $index ) {
 				</tr>
 			</thead>
 
-			<tbody id="wpd-fields-body">
+			<tbody id="wpdc-fields-body">
 				<?php foreach ( $fields as $index => $field ) : ?>
 					<?php $render_row( $field, $index ); ?>
 				<?php endforeach; ?>
@@ -143,7 +143,7 @@ $render_row = static function ( $field, $index ) {
 			<tfoot>
 				<tr>
 					<td colspan="14">
-						<button type="button" class="button" id="wpd-add-field">
+						<button type="button" class="button" id="wpdc-add-field">
 							<?php esc_html_e( '+ Добавить поле', 'wp-diplom' ); ?>
 						</button>
 					</td>
@@ -152,9 +152,9 @@ $render_row = static function ( $field, $index ) {
 		</table>
 	</div>
 
-	<div class="wpd-fields__help">
+	<div class="wpdc-fields__help">
 		<p><strong><?php esc_html_e( 'Плейсхолдеры', 'wp-diplom' ); ?></strong></p>
-		<ul class="wpd-placeholders">
+		<ul class="wpdc-placeholders">
 			<?php foreach ( $placeholders as $code => $label ) : ?>
 				<li><code><?php echo esc_html( $code ); ?></code> — <?php echo esc_html( $label ); ?></li>
 			<?php endforeach; ?>
@@ -171,6 +171,6 @@ $render_row = static function ( $field, $index ) {
 	</p>
 </div>
 
-<script type="text/html" id="tmpl-wpd-field-row">
+<script type="text/html" id="tmpl-wpdc-field-row">
 	<?php $render_row( array(), '__index__' ); ?>
 </script>

@@ -7,13 +7,13 @@
  * @package WP_Diplom
  */
 
-define( 'WPD_PDF_STANDALONE', true );
+define( 'WPDC_PDF_STANDALONE', true );
 
 $root = dirname( __DIR__ );
 
-require_once $root . '/includes/class-wpd-renderer.php';
+require_once $root . '/includes/class-wpdc-renderer.php';
 
-$output   = $argv[1] ?? sys_get_temp_dir() . '/wpd-certificate.pdf';
+$output   = $argv[1] ?? sys_get_temp_dir() . '/wpdc-certificate.pdf';
 $failures = 0;
 
 /**
@@ -33,7 +33,7 @@ function check( $condition, $label ) {
 }
 
 // --- Подстановка плейсхолдеров -------------------------------------------
-$data = WPD_Renderer::normalize_data(
+$data = WPDC_Renderer::normalize_data(
 	array(
 		'recipient_name' => 'Петрова Анна Сергеевна',
 		'course_title'   => 'Веб-разработка на WordPress',
@@ -48,31 +48,31 @@ $data = WPD_Renderer::normalize_data(
 );
 
 check(
-	'Петрова Анна Сергеевна' === WPD_Renderer::replace_placeholders( '{recipient_name}', $data ),
+	'Петрова Анна Сергеевна' === WPDC_Renderer::replace_placeholders( '{recipient_name}', $data ),
 	'плейсхолдер {recipient_name} подставлен'
 );
 
 check(
-	'Веб-разработка на WordPress (72 ч.)' === WPD_Renderer::replace_placeholders( '{course_title} ({course_hours} ч.)', $data ),
+	'Веб-разработка на WordPress (72 ч.)' === WPDC_Renderer::replace_placeholders( '{course_title} ({course_hours} ч.)', $data ),
 	'несколько плейсхолдеров в одной строке'
 );
 
 check(
-	'Группа: ВР-21' === WPD_Renderer::replace_placeholders( 'Группа: {custom_group}', $data ),
+	'Группа: ВР-21' === WPDC_Renderer::replace_placeholders( 'Группа: {custom_group}', $data ),
 	'дополнительное поле из CSV ({custom_group})'
 );
 
 check(
-	'Пусто: ' === WPD_Renderer::replace_placeholders( 'Пусто: {unknown_key}', $data ),
+	'Пусто: ' === WPDC_Renderer::replace_placeholders( 'Пусто: {unknown_key}', $data ),
 	'неизвестный плейсхолдер заменён пустой строкой'
 );
 
 // --- Нормализация конфигурации -------------------------------------------
-$template = WPD_Renderer::normalize_template(
+$template = WPDC_Renderer::normalize_template(
 	array(
 		'page'         => 'a4_landscape',
 		'organization' => 'Красноярский техникум',
-		'fields'       => WPD_Renderer::default_fields(),
+		'fields'       => WPDC_Renderer::default_fields(),
 	)
 );
 
@@ -80,19 +80,19 @@ check( 9 === count( $template['fields'] ), 'бланк по умолчанию �
 check( true === $template['border']['enabled'], 'рамка включена по умолчанию' );
 check( '#ffffff' === $template['background_color'], 'фон по умолчанию белый' );
 
-$fallback = WPD_Renderer::normalize_template( array( 'page' => 'нечто-неизвестное' ) );
+$fallback = WPDC_Renderer::normalize_template( array( 'page' => 'нечто-неизвестное' ) );
 check( 'a4_landscape' === $fallback['page'], 'неизвестный размер страницы → A4 landscape' );
 
-list( $w, $h ) = WPD_Renderer::page_size( 'a4_landscape' );
+list( $w, $h ) = WPDC_Renderer::page_size( 'a4_landscape' );
 check( 297.0 === $w && 210.0 === $h, 'размер A4 landscape = 297×210 мм' );
 
 // --- Цвета ---------------------------------------------------------------
-check( '#2f6fed' === WPD_Renderer::sanitize_color( '#2f6fed' ), 'валидный HEX-цвет сохранён' );
-check( '#000000' === WPD_Renderer::sanitize_color( 'javascript:alert(1)' ), 'невалидный цвет → чёрный' );
-check( '#abc' === WPD_Renderer::sanitize_color( 'abc' ), 'короткая запись цвета принята' );
+check( '#2f6fed' === WPDC_Renderer::sanitize_color( '#2f6fed' ), 'валидный HEX-цвет сохранён' );
+check( '#000000' === WPDC_Renderer::sanitize_color( 'javascript:alert(1)' ), 'невалидный цвет → чёрный' );
+check( '#abc' === WPDC_Renderer::sanitize_color( 'abc' ), 'короткая запись цвета принята' );
 
 // --- Рендер PDF ----------------------------------------------------------
-$renderer = new WPD_Renderer();
+$renderer = new WPDC_Renderer();
 
 $pdf_binary = $renderer->render( $template, $data );
 
@@ -120,7 +120,7 @@ check(
 );
 
 // --- Кастомный бланк без рамки и с нестандартной страницей ----------------
-$custom = WPD_Renderer::normalize_template(
+$custom = WPDC_Renderer::normalize_template(
 	array(
 		'page'             => 'a5_portrait',
 		'background_color' => '#fdfaf3',
@@ -152,7 +152,7 @@ check(
 );
 
 // --- Ошибка при отсутствии шрифтов ---------------------------------------
-$broken = new WPD_Renderer( '/nonexistent-fonts-dir' );
+$broken = new WPDC_Renderer( '/nonexistent-fonts-dir' );
 $thrown = false;
 
 try {

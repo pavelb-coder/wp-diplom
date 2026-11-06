@@ -6,7 +6,7 @@
  * сертификатов и бланков сохраняются, чтобы не потерять выданные документы.
  * Чтобы удалить всё, включая записи и PDF, добавьте в wp-config.php:
  *
- *     define( 'WPD_REMOVE_ALL_DATA', true );
+ *     define( 'WPDC_REMOVE_ALL_DATA', true );
  *
  * @package WP_Diplom
  */
@@ -18,15 +18,15 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 /**
  * Очистка данных одного сайта.
  */
-function wpd_uninstall_site() {
+function wpdc_uninstall_site() {
 	global $wpdb;
 
 	// Настройки и счётчики номеров.
-	delete_option( 'wpd_settings' );
-	delete_option( 'wpd_db_version' );
+	delete_option( 'wpdc_settings' );
+	delete_option( 'wpdc_db_version' );
 
 	$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		"DELETE FROM {$wpdb->options} WHERE option_name LIKE 'wpd_number_counter_%'"
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE 'wpdc_number_counter_%'"
 	);
 
 	// Транзиенты массовой генерации.
@@ -35,14 +35,14 @@ function wpd_uninstall_site() {
 		. " OR option_name LIKE '_transient_timeout_wpd_bulk_result_%'"
 	);
 
-	if ( ! defined( 'WPD_REMOVE_ALL_DATA' ) || ! WPD_REMOVE_ALL_DATA ) {
+	if ( ! defined( 'WPDC_REMOVE_ALL_DATA' ) || ! WPDC_REMOVE_ALL_DATA ) {
 		return;
 	}
 
 	// Записи и метаданные.
 	$post_ids = get_posts(
 		array(
-			'post_type'      => array( 'wpd_certificate', 'wpd_template' ),
+			'post_type'      => array( 'wpdc_certificate', 'wpdc_template' ),
 			'post_status'    => 'any',
 			'posts_per_page' => -1,
 			'fields'         => 'ids',
@@ -55,7 +55,7 @@ function wpd_uninstall_site() {
 
 	// PDF-файлы.
 	$uploads = wp_upload_dir( null, false );
-	$dir     = trailingslashit( $uploads['basedir'] ) . 'wpd-certificates';
+	$dir     = trailingslashit( $uploads['basedir'] ) . 'wpdc-certificates';
 
 	if ( is_dir( $dir ) ) {
 		$files = glob( $dir . '/*' );
@@ -72,7 +72,7 @@ function wpd_uninstall_site() {
 	// Термины таксономии.
 	$terms = get_terms(
 		array(
-			'taxonomy'   => 'wpd_program',
+			'taxonomy'   => 'wpdc_program',
 			'hide_empty' => false,
 			'fields'     => 'ids',
 		)
@@ -80,7 +80,7 @@ function wpd_uninstall_site() {
 
 	if ( ! is_wp_error( $terms ) ) {
 		foreach ( $terms as $term_id ) {
-			wp_delete_term( $term_id, 'wpd_program' );
+			wp_delete_term( $term_id, 'wpdc_program' );
 		}
 	}
 }
@@ -90,9 +90,9 @@ if ( is_multisite() ) {
 
 	foreach ( $sites as $site_id ) {
 		switch_to_blog( $site_id );
-		wpd_uninstall_site();
+		wpdc_uninstall_site();
 		restore_current_blog();
 	}
 } else {
-	wpd_uninstall_site();
+	wpdc_uninstall_site();
 }

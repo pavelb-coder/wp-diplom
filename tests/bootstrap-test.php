@@ -2,7 +2,7 @@
 /**
  * Тест загрузки плагина: заголовок, версия, регистрация компонентов.
  *
- * Проверяет, что плагин стартует без ошибок и что WPD_VERSION читается
+ * Проверяет, что плагин стартует без ошибок и что WPDC_VERSION читается
  * из заголовка `Version:` (формат x.y.z).
  *
  * Запуск: php tests/bootstrap-test.php
@@ -12,8 +12,8 @@
 
 require_once __DIR__ . '/wp-stubs.php';
 
-if ( ! defined( 'WPD_TEST_ROOT' ) ) {
-	define( 'WPD_TEST_ROOT', dirname( __DIR__ ) . '/' );
+if ( ! defined( 'WPDC_TEST_ROOT' ) ) {
+	define( 'WPDC_TEST_ROOT', dirname( __DIR__ ) . '/' );
 }
 
 /**
@@ -73,38 +73,38 @@ function check( $condition, $label ) {
 }
 
 // --- Загрузка плагина ---------------------------------------------------
-require_once WPD_TEST_ROOT . 'wp-diplom.php';
+require_once WPDC_TEST_ROOT . 'wp-diplom.php';
 
-check( defined( 'WPD_VERSION' ), 'константа WPD_VERSION определена' );
+check( defined( 'WPDC_VERSION' ), 'константа WPDC_VERSION определена' );
 $header_version = '';
 
-if ( preg_match( '/^[ \t\/*#@]*Version:(.*)$/mi', (string) file_get_contents( WPD_TEST_ROOT . 'wp-diplom.php' ), $m ) ) {
+if ( preg_match( '/^[ \t\/*#@]*Version:(.*)$/mi', (string) file_get_contents( WPDC_TEST_ROOT . 'wp-diplom.php' ), $m ) ) {
 	$header_version = trim( $m[1] );
 }
 
 check(
-	defined( 'WPD_VERSION' ) && $header_version === WPD_VERSION,
-	'версия совпадает с заголовком (' . ( $header_version ? $header_version : '—' ) . '): ' . ( defined( 'WPD_VERSION' ) ? WPD_VERSION : '—' )
+	defined( 'WPDC_VERSION' ) && $header_version === WPDC_VERSION,
+	'версия совпадает с заголовком (' . ( $header_version ? $header_version : '—' ) . '): ' . ( defined( 'WPDC_VERSION' ) ? WPDC_VERSION : '—' )
 );
-check( (bool) preg_match( '/^\d+\.\d+\.\d+$/', WPD_VERSION ), 'версия в формате x.y.z' );
+check( (bool) preg_match( '/^\d+\.\d+\.\d+$/', WPDC_VERSION ), 'версия в формате x.y.z' );
 
 // Классы подключаются конструктором плагина.
-$plugin = wpd();
+$plugin = wpdc();
 
-check( class_exists( 'WPD_Plugin' ), 'класс WPD_Plugin загружен' );
-check( class_exists( 'WPD_Post_Types' ), 'класс WPD_Post_Types загружен' );
-check( class_exists( 'WPD_Certificate' ), 'класс WPD_Certificate загружен' );
-check( class_exists( 'WPD_Renderer' ), 'класс WPD_Renderer загружен' );
-check( class_exists( 'WPD_Admin' ), 'класс WPD_Admin загружен' );
-check( class_exists( 'WPD_Frontend' ), 'класс WPD_Frontend загружен' );
-check( class_exists( 'WPD_Email' ), 'класс WPD_Email загружен' );
-check( class_exists( 'WPD_PDF_Writer' ), 'класс WPD_PDF_Writer загружен' );
-check( class_exists( 'WPD_PDF_Font' ), 'класс WPD_PDF_Font загружен' );
+check( class_exists( 'WPDC_Plugin' ), 'класс WPDC_Plugin загружен' );
+check( class_exists( 'WPDC_Post_Types' ), 'класс WPDC_Post_Types загружен' );
+check( class_exists( 'WPDC_Certificate' ), 'класс WPDC_Certificate загружен' );
+check( class_exists( 'WPDC_Renderer' ), 'класс WPDC_Renderer загружен' );
+check( class_exists( 'WPDC_Admin' ), 'класс WPDC_Admin загружен' );
+check( class_exists( 'WPDC_Frontend' ), 'класс WPDC_Frontend загружен' );
+check( class_exists( 'WPDC_Email' ), 'класс WPDC_Email загружен' );
+check( class_exists( 'WPDC_PDF_Writer' ), 'класс WPDC_PDF_Writer загружен' );
+check( class_exists( 'WPDC_PDF_Font' ), 'класс WPDC_PDF_Font загружен' );
 
 // --- Инициализация ------------------------------------------------------
 
-check( $plugin instanceof WPD_Plugin, 'wpd() возвращает экземпляр плагина' );
-check( $plugin === wpd(), 'wpd() — синглтон' );
+check( $plugin instanceof WPDC_Plugin, 'wpdc() возвращает экземпляр плагина' );
+check( $plugin === wpdc(), 'wpdc() — синглтон' );
 
 $thrown = false;
 
@@ -126,8 +126,8 @@ $fonts = array( 'DejaVuSans.ttf', 'DejaVuSans-Bold.ttf', 'DejaVuSerif.ttf' );
 
 foreach ( $fonts as $font ) {
 	check(
-		is_readable( WPD_TEST_ROOT . 'assets/fonts/' . $font ),
-		'шрифт на месте: ' . $font . ' (' . round( filesize( WPD_TEST_ROOT . 'assets/fonts/' . $font ) / 1024 ) . ' КБ)'
+		is_readable( WPDC_TEST_ROOT . 'assets/fonts/' . $font ),
+		'шрифт на месте: ' . $font . ' (' . round( filesize( WPDC_TEST_ROOT . 'assets/fonts/' . $font ) / 1024 ) . ' КБ)'
 	);
 }
 
@@ -137,12 +137,12 @@ $required = array(
 	'readme.txt',
 	'README.md',
 	'CHANGELOG.md',
-	'includes/class-wpd-plugin.php',
-	'includes/pdf/class-wpd-pdf-writer.php',
+	'includes/class-wpdc-plugin.php',
+	'includes/pdf/class-wpdc-pdf-writer.php',
 );
 
 foreach ( $required as $file ) {
-	check( file_exists( WPD_TEST_ROOT . $file ), 'файл на месте: ' . $file );
+	check( file_exists( WPDC_TEST_ROOT . $file ), 'файл на месте: ' . $file );
 }
 
 echo "\n";

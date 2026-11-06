@@ -10,16 +10,16 @@
  * @package WP_Diplom
  */
 
-if ( ! defined( 'ABSPATH' ) && ! defined( 'WPD_PDF_STANDALONE' ) ) {
+if ( ! defined( 'ABSPATH' ) && ! defined( 'WPDC_PDF_STANDALONE' ) ) {
 	exit;
 }
 
-require_once __DIR__ . '/class-wpd-pdf-font.php';
+require_once __DIR__ . '/class-wpdc-pdf-font.php';
 
 /**
  * Документ PDF.
  */
-class WPD_PDF_Writer {
+class WPDC_PDF_Writer {
 
 	/**
 	 * Соотношение миллиметров и пунктов.
@@ -41,9 +41,9 @@ class WPD_PDF_Writer {
 	private $objects = array();
 
 	/**
-	 * Шрифты: 'family-style' => WPD_PDF_Font.
+	 * Шрифты: 'family-style' => WPDC_PDF_Font.
 	 *
-	 * @var array<string, WPD_PDF_Font>
+	 * @var array<string, WPDC_PDF_Font>
 	 */
 	private $fonts = array();
 
@@ -125,7 +125,7 @@ class WPD_PDF_Writer {
 	public function __construct( array $fonts = array() ) {
 		foreach ( $fonts as $family => $styles ) {
 			foreach ( (array) $styles as $style => $path ) {
-				$font = WPD_PDF_Font::load( $path, $family . '-' . $style );
+				$font = WPDC_PDF_Font::load( $path, $family . '-' . $style );
 
 				if ( $font ) {
 					$this->fonts[ $family . '-' . $style ] = $font;
@@ -557,7 +557,7 @@ class WPD_PDF_Writer {
 	 *
 	 * @param string $family Семейство.
 	 * @param string $style  Стиль.
-	 * @return WPD_PDF_Font|null
+	 * @return WPDC_PDF_Font|null
 	 */
 	private function font( $family, $style ) {
 		$key = $family . '-' . $style;
@@ -610,14 +610,14 @@ class WPD_PDF_Writer {
 	/**
 	 * Шрифты по id (для записи ToUnicode).
 	 *
-	 * @var array<int, WPD_PDF_Font>
+	 * @var array<int, WPDC_PDF_Font>
 	 */
 	private $fonts_by_id = array();
 
 	/**
 	 * Создаёт объекты встроенного шрифта.
 	 *
-	 * @param WPD_PDF_Font $font Шрифт.
+	 * @param WPDC_PDF_Font $font Шрифт.
 	 * @return int id объекта Type0.
 	 */
 	private function register_font( $font ) {
@@ -1063,7 +1063,7 @@ class WPD_PDF_Writer {
 	 * Перенос текста по словам.
 	 *
 	 * @param string       $text  Текст.
-	 * @param WPD_PDF_Font $font  Шрифт.
+	 * @param WPDC_PDF_Font $font  Шрифт.
 	 * @param float        $size  Кегль.
 	 * @param float        $width Максимальная ширина.
 	 * @return string[]
@@ -1210,7 +1210,7 @@ class WPD_PDF_Writer {
 	private function text_string( $value ) {
 		$encoded = '';
 
-		foreach ( WPD_PDF_Font::codepoints( $value ) as $cp ) {
+		foreach ( WPDC_PDF_Font::codepoints( $value ) as $cp ) {
 			$encoded .= sprintf( '%04X', $cp );
 		}
 

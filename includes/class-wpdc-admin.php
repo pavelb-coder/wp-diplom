@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Административный интерфейс.
  */
-class WPD_Admin {
+class WPDC_Admin {
 
 	/**
 	 * Хуки.
@@ -50,7 +50,7 @@ class WPD_Admin {
 	 * не падает, а администратор видит точное место проблемы.
 	 */
 	public function activation_notice() {
-		$error = get_option( 'wpd_activation_error' );
+		$error = get_option( 'wpdc_activation_error' );
 
 		if ( ! is_array( $error ) || empty( $error['message'] ) || ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -79,20 +79,20 @@ class WPD_Admin {
 	 */
 	public function menu() {
 		add_submenu_page(
-			'edit.php?post_type=wpd_certificate',
+			'edit.php?post_type=wpdc_certificate',
 			__( 'Массовая генерация', 'wp-diplom' ),
 			__( 'Массовая генерация', 'wp-diplom' ),
 			'edit_posts',
-			'wpd-bulk',
+			'wpdc-bulk',
 			array( $this, 'render_bulk_page' )
 		);
 
 		add_submenu_page(
-			'edit.php?post_type=wpd_certificate',
+			'edit.php?post_type=wpdc_certificate',
 			__( 'Настройки сертификатов', 'wp-diplom' ),
 			__( 'Настройки', 'wp-diplom' ),
 			'manage_options',
-			'wpd-settings',
+			'wpdc-settings',
 			array( $this, 'render_settings_page' )
 		);
 	}
@@ -107,29 +107,29 @@ class WPD_Admin {
 
 		$is_plugin_screen = $screen && in_array(
 			$screen->post_type ?? '',
-			array( 'wpd_certificate', 'wpd_template' ),
+			array( 'wpdc_certificate', 'wpdc_template' ),
 			true
 		);
 
-		$is_plugin_page = false !== strpos( (string) $hook, 'wpd-' );
+		$is_plugin_page = false !== strpos( (string) $hook, 'wpdc-' );
 
 		if ( ! $is_plugin_screen && ! $is_plugin_page ) {
 			return;
 		}
 
-		wp_enqueue_style( 'wpd-admin', WPD_URL . 'assets/css/admin.css', array(), WPD_VERSION );
+		wp_enqueue_style( 'wpdc-admin', WPDC_URL . 'assets/css/admin.css', array(), WPDC_VERSION );
 		wp_enqueue_media();
 
 		wp_enqueue_script(
-			'wpd-admin',
-			WPD_URL . 'assets/js/admin.js',
+			'wpdc-admin',
+			WPDC_URL . 'assets/js/admin.js',
 			array( 'jquery' ),
-			WPD_VERSION,
+			WPDC_VERSION,
 			true
 		);
 
 		wp_localize_script(
-			'wpd-admin',
+			'wpdc-admin',
 			'wpdAdmin',
 			array(
 				'chooseBackground' => __( 'Выбрать фон бланка', 'wp-diplom' ),
@@ -148,37 +148,37 @@ class WPD_Admin {
 	 */
 	public function meta_boxes() {
 		add_meta_box(
-			'wpd_template_design',
+			'wpdc_template_design',
 			__( 'Дизайн бланка', 'wp-diplom' ),
 			array( $this, 'render_template_design_box' ),
-			'wpd_template',
+			'wpdc_template',
 			'normal',
 			'high'
 		);
 
 		add_meta_box(
-			'wpd_template_fields',
+			'wpdc_template_fields',
 			__( 'Поля бланка', 'wp-diplom' ),
 			array( $this, 'render_template_fields_box' ),
-			'wpd_template',
+			'wpdc_template',
 			'normal',
 			'high'
 		);
 
 		add_meta_box(
-			'wpd_certificate_data',
+			'wpdc_certificate_data',
 			__( 'Данные сертификата', 'wp-diplom' ),
 			array( $this, 'render_certificate_box' ),
-			'wpd_certificate',
+			'wpdc_certificate',
 			'normal',
 			'high'
 		);
 
 		add_meta_box(
-			'wpd_certificate_actions',
+			'wpdc_certificate_actions',
 			__( 'Документ', 'wp-diplom' ),
 			array( $this, 'render_certificate_actions_box' ),
-			'wpd_certificate',
+			'wpdc_certificate',
 			'side',
 			'default'
 		);
@@ -190,16 +190,16 @@ class WPD_Admin {
 	 * @param WP_Post $post Запись.
 	 */
 	public function render_template_design_box( $post ) {
-		wp_nonce_field( 'wpd_save_template', 'wpd_template_nonce' );
+		wp_nonce_field( 'wpdc_save_template', 'wpdc_template_nonce' );
 
-		$page       = (string) get_post_meta( $post->ID, '_wpd_page', true );
+		$page       = (string) get_post_meta( $post->ID, '_wpdc_page', true );
 		$page       = $page ? $page : 'a4_landscape';
-		$background = absint( get_post_meta( $post->ID, '_wpd_background_id', true ) );
-		$color      = (string) get_post_meta( $post->ID, '_wpd_background_color', true );
-		$fit        = (string) get_post_meta( $post->ID, '_wpd_background_fit', true );
-		$org        = (string) get_post_meta( $post->ID, '_wpd_organization', true );
-		$title      = (string) get_post_meta( $post->ID, '_wpd_document_title', true );
-		$border     = get_post_meta( $post->ID, '_wpd_border', true );
+		$background = absint( get_post_meta( $post->ID, '_wpdc_background_id', true ) );
+		$color      = (string) get_post_meta( $post->ID, '_wpdc_background_color', true );
+		$fit        = (string) get_post_meta( $post->ID, '_wpdc_background_fit', true );
+		$org        = (string) get_post_meta( $post->ID, '_wpdc_organization', true );
+		$title      = (string) get_post_meta( $post->ID, '_wpdc_document_title', true );
+		$border     = get_post_meta( $post->ID, '_wpdc_border', true );
 
 		$border = is_array( $border ) && $border ? $border : array(
 			'enabled' => 1,
@@ -209,7 +209,7 @@ class WPD_Admin {
 			'inset_y' => 12,
 		);
 
-		include WPD_DIR . 'admin/views/meta-template-design.php';
+		include WPDC_DIR . 'admin/views/meta-template-design.php';
 	}
 
 	/**
@@ -218,25 +218,25 @@ class WPD_Admin {
 	 * @param WP_Post $post Запись.
 	 */
 	public function render_template_fields_box( $post ) {
-		$fields = get_post_meta( $post->ID, '_wpd_fields', true );
+		$fields = get_post_meta( $post->ID, '_wpdc_fields', true );
 
 		if ( ! is_array( $fields ) || empty( $fields ) ) {
-			$fields = WPD_Renderer::default_fields();
+			$fields = WPDC_Renderer::default_fields();
 		}
 
-		$placeholders = WPD_Renderer::placeholders();
+		$placeholders = WPDC_Renderer::placeholders();
 		$preview_url  = wp_nonce_url(
 			add_query_arg(
 				array(
-					'action' => 'wpd_preview',
+					'action' => 'wpdc_preview',
 					'id'     => $post->ID,
 				),
 				admin_url( 'admin-post.php' )
 			),
-			'wpd_preview_' . $post->ID
+			'wpdc_preview_' . $post->ID
 		);
 
-		include WPD_DIR . 'admin/views/meta-template-fields.php';
+		include WPDC_DIR . 'admin/views/meta-template-fields.php';
 	}
 
 	/**
@@ -245,13 +245,13 @@ class WPD_Admin {
 	 * @param WP_Post $post Запись.
 	 */
 	public function render_certificate_box( $post ) {
-		wp_nonce_field( 'wpd_save_certificate', 'wpd_certificate_nonce' );
+		wp_nonce_field( 'wpdc_save_certificate', 'wpdc_certificate_nonce' );
 
-		$settings = WPD_Plugin::settings();
+		$settings = WPDC_Plugin::settings();
 
 		$templates = get_posts(
 			array(
-				'post_type'      => 'wpd_template',
+				'post_type'      => 'wpdc_template',
 				'posts_per_page' => -1,
 				'post_status'    => 'publish',
 				'orderby'        => 'title',
@@ -259,7 +259,7 @@ class WPD_Admin {
 			)
 		);
 
-		include WPD_DIR . 'admin/views/meta-certificate.php';
+		include WPDC_DIR . 'admin/views/meta-certificate.php';
 	}
 
 	/**
@@ -270,7 +270,7 @@ class WPD_Admin {
 	public function render_certificate_actions_box( $post ) {
 		$is_public = 'publish' === $post->post_status;
 
-		include WPD_DIR . 'admin/views/meta-certificate-actions.php';
+		include WPDC_DIR . 'admin/views/meta-certificate-actions.php';
 	}
 
 	/* --------------------------------------------------------------------- */
@@ -288,8 +288,8 @@ class WPD_Admin {
 			return;
 		}
 
-		if ( ! isset( $_POST['wpd_template_nonce'] )
-			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wpd_template_nonce'] ) ), 'wpd_save_template' ) ) {
+		if ( ! isset( $_POST['wpdc_template_nonce'] )
+			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wpdc_template_nonce'] ) ), 'wpdc_save_template' ) ) {
 			return;
 		}
 
@@ -298,45 +298,45 @@ class WPD_Admin {
 		}
 
 		// Дизайн.
-		$page = sanitize_key( wp_unslash( $_POST['wpd_page'] ?? 'a4_landscape' ) );
+		$page = sanitize_key( wp_unslash( $_POST['wpdc_page'] ?? 'a4_landscape' ) );
 
-		if ( ! isset( WPD_Renderer::PAGE_SIZES[ $page ] ) ) {
+		if ( ! isset( WPDC_Renderer::PAGE_SIZES[ $page ] ) ) {
 			$page = 'a4_landscape';
 		}
 
-		update_post_meta( $post_id, '_wpd_page', $page );
-		update_post_meta( $post_id, '_wpd_background_id', absint( $_POST['wpd_background_id'] ?? 0 ) );
+		update_post_meta( $post_id, '_wpdc_page', $page );
+		update_post_meta( $post_id, '_wpdc_background_id', absint( $_POST['wpdc_background_id'] ?? 0 ) );
 
 		update_post_meta(
 			$post_id,
-			'_wpd_background_color',
-			WPD_Renderer::sanitize_color( wp_unslash( $_POST['wpd_background_color'] ?? '#ffffff' ) )
+			'_wpdc_background_color',
+			WPDC_Renderer::sanitize_color( wp_unslash( $_POST['wpdc_background_color'] ?? '#ffffff' ) )
 		);
 
-		$fit = sanitize_key( wp_unslash( $_POST['wpd_background_fit'] ?? 'cover' ) );
+		$fit = sanitize_key( wp_unslash( $_POST['wpdc_background_fit'] ?? 'cover' ) );
 
-		update_post_meta( $post_id, '_wpd_background_fit', in_array( $fit, array( 'cover', 'contain', 'stretch' ), true ) ? $fit : 'cover' );
+		update_post_meta( $post_id, '_wpdc_background_fit', in_array( $fit, array( 'cover', 'contain', 'stretch' ), true ) ? $fit : 'cover' );
 
-		update_post_meta( $post_id, '_wpd_organization', sanitize_text_field( wp_unslash( $_POST['wpd_organization'] ?? '' ) ) );
-		update_post_meta( $post_id, '_wpd_document_title', sanitize_text_field( wp_unslash( $_POST['wpd_document_title'] ?? '' ) ) );
+		update_post_meta( $post_id, '_wpdc_organization', sanitize_text_field( wp_unslash( $_POST['wpdc_organization'] ?? '' ) ) );
+		update_post_meta( $post_id, '_wpdc_document_title', sanitize_text_field( wp_unslash( $_POST['wpdc_document_title'] ?? '' ) ) );
 
 		update_post_meta(
 			$post_id,
-			'_wpd_border',
+			'_wpdc_border',
 			array(
-				'enabled' => empty( $_POST['wpd_border_enabled'] ) ? 0 : 1,
-				'color'   => WPD_Renderer::sanitize_color( wp_unslash( $_POST['wpd_border_color'] ?? '#2f6fed' ) ),
-				'width'   => max( 0, min( 10, (float) ( $_POST['wpd_border_width'] ?? 0.8 ) ) ),
-				'inset_x' => max( 0, min( 100, (float) ( $_POST['wpd_border_inset_x'] ?? 12 ) ) ),
-				'inset_y' => max( 0, min( 100, (float) ( $_POST['wpd_border_inset_y'] ?? 12 ) ) ),
+				'enabled' => empty( $_POST['wpdc_border_enabled'] ) ? 0 : 1,
+				'color'   => WPDC_Renderer::sanitize_color( wp_unslash( $_POST['wpdc_border_color'] ?? '#2f6fed' ) ),
+				'width'   => max( 0, min( 10, (float) ( $_POST['wpdc_border_width'] ?? 0.8 ) ) ),
+				'inset_x' => max( 0, min( 100, (float) ( $_POST['wpdc_border_inset_x'] ?? 12 ) ) ),
+				'inset_y' => max( 0, min( 100, (float) ( $_POST['wpdc_border_inset_y'] ?? 12 ) ) ),
 			)
 		);
 
 		// Поля.
 		$fields = array();
 
-		if ( isset( $_POST['wpd_field'] ) && is_array( $_POST['wpd_field'] ) ) {
-			$raw = wp_unslash( $_POST['wpd_field'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( isset( $_POST['wpdc_field'] ) && is_array( $_POST['wpdc_field'] ) ) {
+			$raw = wp_unslash( $_POST['wpdc_field'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 			foreach ( $raw as $field ) {
 				if ( ! is_array( $field ) ) {
@@ -364,7 +364,7 @@ class WPD_Admin {
 		}
 
 		if ( $fields ) {
-			update_post_meta( $post_id, '_wpd_fields', WPD_Renderer::sanitize_fields( $fields ) );
+			update_post_meta( $post_id, '_wpdc_fields', WPDC_Renderer::sanitize_fields( $fields ) );
 		}
 	}
 
@@ -379,8 +379,8 @@ class WPD_Admin {
 			return;
 		}
 
-		if ( ! isset( $_POST['wpd_certificate_nonce'] )
-			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wpd_certificate_nonce'] ) ), 'wpd_save_certificate' ) ) {
+		if ( ! isset( $_POST['wpdc_certificate_nonce'] )
+			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wpdc_certificate_nonce'] ) ), 'wpdc_save_certificate' ) ) {
 			return;
 		}
 
@@ -388,33 +388,33 @@ class WPD_Admin {
 			return;
 		}
 
-		$recipient = sanitize_text_field( wp_unslash( $_POST['wpd_recipient'] ?? '' ) );
+		$recipient = sanitize_text_field( wp_unslash( $_POST['wpdc_recipient'] ?? '' ) );
 
-		update_post_meta( $post_id, '_wpd_recipient', $recipient );
-		update_post_meta( $post_id, '_wpd_email', sanitize_email( wp_unslash( $_POST['wpd_email'] ?? '' ) ) );
-		update_post_meta( $post_id, '_wpd_course', sanitize_text_field( wp_unslash( $_POST['wpd_course'] ?? '' ) ) );
-		update_post_meta( $post_id, '_wpd_hours', sanitize_text_field( wp_unslash( $_POST['wpd_hours'] ?? '' ) ) );
-		update_post_meta( $post_id, '_wpd_teacher', sanitize_text_field( wp_unslash( $_POST['wpd_teacher'] ?? '' ) ) );
+		update_post_meta( $post_id, '_wpdc_recipient', $recipient );
+		update_post_meta( $post_id, '_wpdc_email', sanitize_email( wp_unslash( $_POST['wpdc_email'] ?? '' ) ) );
+		update_post_meta( $post_id, '_wpdc_course', sanitize_text_field( wp_unslash( $_POST['wpdc_course'] ?? '' ) ) );
+		update_post_meta( $post_id, '_wpdc_hours', sanitize_text_field( wp_unslash( $_POST['wpdc_hours'] ?? '' ) ) );
+		update_post_meta( $post_id, '_wpdc_teacher', sanitize_text_field( wp_unslash( $_POST['wpdc_teacher'] ?? '' ) ) );
 
-		$date = sanitize_text_field( wp_unslash( $_POST['wpd_date'] ?? '' ) );
-		update_post_meta( $post_id, '_wpd_date', preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ? $date : current_time( 'Y-m-d' ) );
+		$date = sanitize_text_field( wp_unslash( $_POST['wpdc_date'] ?? '' ) );
+		update_post_meta( $post_id, '_wpdc_date', preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ? $date : current_time( 'Y-m-d' ) );
 
-		$number = sanitize_text_field( wp_unslash( $_POST['wpd_number'] ?? '' ) );
+		$number = sanitize_text_field( wp_unslash( $_POST['wpdc_number'] ?? '' ) );
 
 		if ( '' !== $number ) {
-			update_post_meta( $post_id, '_wpd_number', $number );
-		} elseif ( '' === (string) get_post_meta( $post_id, '_wpd_number', true ) ) {
-			update_post_meta( $post_id, '_wpd_number', WPD_Certificate::next_number() );
+			update_post_meta( $post_id, '_wpdc_number', $number );
+		} elseif ( '' === (string) get_post_meta( $post_id, '_wpdc_number', true ) ) {
+			update_post_meta( $post_id, '_wpdc_number', WPDC_Certificate::next_number() );
 		}
 
-		update_post_meta( $post_id, '_wpd_template', absint( $_POST['wpd_template'] ?? 0 ) );
-		update_post_meta( $post_id, '_wpd_revoked', empty( $_POST['wpd_revoked'] ) ? 0 : 1 );
+		update_post_meta( $post_id, '_wpdc_template', absint( $_POST['wpdc_template'] ?? 0 ) );
+		update_post_meta( $post_id, '_wpdc_revoked', empty( $_POST['wpdc_revoked'] ) ? 0 : 1 );
 
 		$custom = array();
 
-		if ( isset( $_POST['wpd_custom_key'] ) && is_array( $_POST['wpd_custom_key'] ) ) {
-			$keys   = wp_unslash( $_POST['wpd_custom_key'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$values = wp_unslash( $_POST['wpd_custom_value'] ?? array() ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( isset( $_POST['wpdc_custom_key'] ) && is_array( $_POST['wpdc_custom_key'] ) ) {
+			$keys   = wp_unslash( $_POST['wpdc_custom_key'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$values = wp_unslash( $_POST['wpdc_custom_value'] ?? array() ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 			foreach ( $keys as $index => $key ) {
 				$key = sanitize_key( $key );
@@ -425,10 +425,10 @@ class WPD_Admin {
 			}
 		}
 
-		update_post_meta( $post_id, '_wpd_custom', $custom );
+		update_post_meta( $post_id, '_wpdc_custom', $custom );
 
 		// Сбрасываем кэш PDF, чтобы документ пересобрался с новыми данными.
-		WPD_Certificate::delete_pdf( $post_id );
+		WPDC_Certificate::delete_pdf( $post_id );
 	}
 
 	/**
@@ -437,8 +437,8 @@ class WPD_Admin {
 	 * @param int $post_id id.
 	 */
 	public function delete_files( $post_id ) {
-		if ( 'wpd_certificate' === get_post_type( $post_id ) ) {
-			WPD_Certificate::delete_pdf( $post_id );
+		if ( 'wpdc_certificate' === get_post_type( $post_id ) ) {
+			WPDC_Certificate::delete_pdf( $post_id );
 		}
 	}
 
@@ -459,11 +459,11 @@ class WPD_Admin {
 			$new[ $key ] = $label;
 
 			if ( 'title' === $key ) {
-				$new['wpd_course']   = __( 'Программа', 'wp-diplom' );
-				$new['wpd_number']   = __( 'Номер', 'wp-diplom' );
-				$new['wpd_date']     = __( 'Выдан', 'wp-diplom' );
-				$new['wpd_status']   = __( 'Статус', 'wp-diplom' );
-				$new['wpd_actions']  = __( 'PDF', 'wp-diplom' );
+				$new['wpdc_course']   = __( 'Программа', 'wp-diplom' );
+				$new['wpdc_number']   = __( 'Номер', 'wp-diplom' );
+				$new['wpdc_date']     = __( 'Выдан', 'wp-diplom' );
+				$new['wpdc_status']   = __( 'Статус', 'wp-diplom' );
+				$new['wpdc_actions']  = __( 'PDF', 'wp-diplom' );
 			}
 		}
 
@@ -478,32 +478,32 @@ class WPD_Admin {
 	 */
 	public function certificate_column_content( $column, $post_id ) {
 		switch ( $column ) {
-			case 'wpd_course':
-				echo esc_html( (string) get_post_meta( $post_id, '_wpd_course', true ) );
+			case 'wpdc_course':
+				echo esc_html( (string) get_post_meta( $post_id, '_wpdc_course', true ) );
 				break;
 
-			case 'wpd_number':
-				echo '<code>' . esc_html( (string) get_post_meta( $post_id, '_wpd_number', true ) ) . '</code>';
+			case 'wpdc_number':
+				echo '<code>' . esc_html( (string) get_post_meta( $post_id, '_wpdc_number', true ) ) . '</code>';
 				break;
 
-			case 'wpd_date':
-				echo esc_html( WPD_Certificate::format_date( (string) get_post_meta( $post_id, '_wpd_date', true ) ) );
+			case 'wpdc_date':
+				echo esc_html( WPDC_Certificate::format_date( (string) get_post_meta( $post_id, '_wpdc_date', true ) ) );
 				break;
 
-			case 'wpd_status':
-				if ( get_post_meta( $post_id, '_wpd_revoked', true ) ) {
-					echo '<span class="wpd-badge wpd-badge--revoked">' . esc_html__( 'Отозван', 'wp-diplom' ) . '</span>';
-				} elseif ( '' !== WPD_Certificate::sent_at( $post_id ) ) {
-					echo '<span class="wpd-badge wpd-badge--sent">' . esc_html__( 'Отправлен', 'wp-diplom' ) . '</span>';
+			case 'wpdc_status':
+				if ( get_post_meta( $post_id, '_wpdc_revoked', true ) ) {
+					echo '<span class="wpdc-badge wpdc-badge--revoked">' . esc_html__( 'Отозван', 'wp-diplom' ) . '</span>';
+				} elseif ( '' !== WPDC_Certificate::sent_at( $post_id ) ) {
+					echo '<span class="wpdc-badge wpdc-badge--sent">' . esc_html__( 'Отправлен', 'wp-diplom' ) . '</span>';
 				} else {
-					echo '<span class="wpd-badge">' . esc_html__( 'Не отправлен', 'wp-diplom' ) . '</span>';
+					echo '<span class="wpdc-badge">' . esc_html__( 'Не отправлен', 'wp-diplom' ) . '</span>';
 				}
 				break;
 
-			case 'wpd_actions':
+			case 'wpdc_actions':
 				printf(
 					'<a class="button button-small" href="%s">%s</a>',
-					esc_url( WPD_Certificate::download_url( $post_id ) ),
+					esc_url( WPDC_Certificate::download_url( $post_id ) ),
 					esc_html__( 'Скачать', 'wp-diplom' )
 				);
 				break;
@@ -517,9 +517,9 @@ class WPD_Admin {
 	 * @return array
 	 */
 	public function template_columns( $columns ) {
-		$columns['wpd_page']    = __( 'Формат', 'wp-diplom' );
-		$columns['wpd_fields']  = __( 'Полей', 'wp-diplom' );
-		$columns['wpd_preview'] = __( 'Предпросмотр', 'wp-diplom' );
+		$columns['wpdc_page']    = __( 'Формат', 'wp-diplom' );
+		$columns['wpdc_fields']  = __( 'Полей', 'wp-diplom' );
+		$columns['wpdc_preview'] = __( 'Предпросмотр', 'wp-diplom' );
 
 		return $columns;
 	}
@@ -531,29 +531,29 @@ class WPD_Admin {
 	 * @param int    $post_id id.
 	 */
 	public function template_column_content( $column, $post_id ) {
-		if ( 'wpd_page' === $column ) {
-			$options = WPD_Renderer::page_size_options();
-			$page    = (string) get_post_meta( $post_id, '_wpd_page', true );
+		if ( 'wpdc_page' === $column ) {
+			$options = WPDC_Renderer::page_size_options();
+			$page    = (string) get_post_meta( $post_id, '_wpdc_page', true );
 
 			echo esc_html( $options[ $page ] ?? $options['a4_landscape'] );
 		}
 
-		if ( 'wpd_fields' === $column ) {
-			$fields = get_post_meta( $post_id, '_wpd_fields', true );
+		if ( 'wpdc_fields' === $column ) {
+			$fields = get_post_meta( $post_id, '_wpdc_fields', true );
 
 			echo (int) ( is_array( $fields ) ? count( $fields ) : 0 );
 		}
 
-		if ( 'wpd_preview' === $column ) {
+		if ( 'wpdc_preview' === $column ) {
 			$url = wp_nonce_url(
 				add_query_arg(
 					array(
-						'action' => 'wpd_preview',
+						'action' => 'wpdc_preview',
 						'id'     => $post_id,
 					),
 					admin_url( 'admin-post.php' )
 				),
-				'wpd_preview_' . $post_id
+				'wpdc_preview_' . $post_id
 			);
 
 			printf(
@@ -574,13 +574,13 @@ class WPD_Admin {
 	public function handle_download() {
 		$post_id = absint( $_GET['id'] ?? 0 );
 
-		check_admin_referer( 'wpd_download_' . $post_id );
+		check_admin_referer( 'wpdc_download_' . $post_id );
 
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
 		}
 
-		$file = WPD_Certificate::pdf( $post_id );
+		$file = WPDC_Certificate::pdf( $post_id );
 
 		if ( is_wp_error( $file ) ) {
 			wp_die( esc_html( $file->get_error_message() ) );
@@ -595,15 +595,15 @@ class WPD_Admin {
 	public function handle_preview() {
 		$template_id = absint( $_GET['id'] ?? 0 );
 
-		check_admin_referer( 'wpd_preview_' . $template_id );
+		check_admin_referer( 'wpdc_preview_' . $template_id );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
 		}
 
-		$settings = WPD_Plugin::settings();
+		$settings = WPDC_Plugin::settings();
 
-		$template = WPD_Certificate::template_config( $template_id );
+		$template = WPDC_Certificate::template_config( $template_id );
 
 		$sample = array(
 			'recipient_name'  => __( 'Петрова Анна Сергеевна', 'wp-diplom' ),
@@ -611,7 +611,7 @@ class WPD_Admin {
 			'course_title'    => __( 'Веб-разработка на WordPress', 'wp-diplom' ),
 			'course_hours'    => '72',
 			'teacher'         => $settings['sample_teacher'] ? $settings['sample_teacher'] : __( 'Иванов И. И.', 'wp-diplom' ),
-			'date'            => WPD_Certificate::format_date( current_time( 'Y-m-d' ) ),
+			'date'            => WPDC_Certificate::format_date( current_time( 'Y-m-d' ) ),
 			'number'          => 'WPD-' . current_time( 'Y' ) . '-0001',
 			'organization'    => $settings['organization'],
 			'site_name'       => get_bloginfo( 'name' ),
@@ -620,7 +620,7 @@ class WPD_Admin {
 		);
 
 		try {
-			$renderer = new WPD_Renderer();
+			$renderer = new WPDC_Renderer();
 			$binary   = $renderer->render( $template, $sample );
 		} catch ( Exception $e ) {
 			wp_die( esc_html( $e->getMessage() ) );
@@ -635,22 +635,22 @@ class WPD_Admin {
 	public function handle_send() {
 		$post_id = absint( $_GET['id'] ?? 0 );
 
-		check_admin_referer( 'wpd_send_' . $post_id );
+		check_admin_referer( 'wpdc_send_' . $post_id );
 
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
 			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
 		}
 
-		$result = WPD_Email::send( $post_id, true );
+		$result = WPDC_Email::send( $post_id, true );
 
-		$notice = is_wp_error( $result ) ? 'wpd-error' : 'wpd-sent';
+		$notice = is_wp_error( $result ) ? 'wpdc-error' : 'wpdc-sent';
 
 		wp_safe_redirect(
 			add_query_arg(
 				array(
 					'post'       => $post_id,
 					'action'     => 'edit',
-					'wpd_notice' => $notice,
+					'wpdc_notice' => $notice,
 				),
 				admin_url( 'post.php' )
 			)
@@ -662,20 +662,20 @@ class WPD_Admin {
 	 * Массовая генерация из CSV.
 	 */
 	public function handle_bulk() {
-		check_admin_referer( 'wpd_bulk_generate' );
+		check_admin_referer( 'wpdc_bulk_generate' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
 		}
 
-		$template_id = absint( $_POST['wpd_bulk_template'] ?? 0 );
-		$send_email  = ! empty( $_POST['wpd_bulk_email'] );
+		$template_id = absint( $_POST['wpdc_bulk_template'] ?? 0 );
+		$send_email  = ! empty( $_POST['wpdc_bulk_email'] );
 		$csv         = '';
 
-		if ( ! empty( $_FILES['wpd_bulk_file']['tmp_name'] ) && is_uploaded_file( $_FILES['wpd_bulk_file']['tmp_name'] ) ) {
-			$csv = (string) file_get_contents( $_FILES['wpd_bulk_file']['tmp_name'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPress.Security.ValidatedSanitizedInput
-		} elseif ( isset( $_POST['wpd_bulk_csv'] ) ) {
-			$csv = (string) wp_unslash( $_POST['wpd_bulk_csv'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( ! empty( $_FILES['wpdc_bulk_file']['tmp_name'] ) && is_uploaded_file( $_FILES['wpdc_bulk_file']['tmp_name'] ) ) {
+			$csv = (string) file_get_contents( $_FILES['wpdc_bulk_file']['tmp_name'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPress.Security.ValidatedSanitizedInput
+		} elseif ( isset( $_POST['wpdc_bulk_csv'] ) ) {
+			$csv = (string) wp_unslash( $_POST['wpdc_bulk_csv'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		}
 
 		$rows = $this->parse_csv( $csv );
@@ -684,10 +684,10 @@ class WPD_Admin {
 			wp_safe_redirect(
 				add_query_arg(
 					array(
-						'page'       => 'wpd-bulk',
-						'wpd_notice' => 'wpd-bulk-empty',
+						'page'       => 'wpdc-bulk',
+						'wpdc_notice' => 'wpdc-bulk-empty',
 					),
-					admin_url( 'edit.php?post_type=wpd_certificate' )
+					admin_url( 'edit.php?post_type=wpdc_certificate' )
 				)
 			);
 			exit;
@@ -699,7 +699,7 @@ class WPD_Admin {
 		$ids     = array();
 
 		foreach ( $rows as $row ) {
-			$result = WPD_Certificate::create(
+			$result = WPDC_Certificate::create(
 				array(
 					'recipient'   => $row['recipient'] ?? '',
 					'email'       => $row['email'] ?? '',
@@ -721,7 +721,7 @@ class WPD_Admin {
 			$ids[] = $result;
 
 			if ( $send_email ) {
-				$sent = WPD_Email::send( $result );
+				$sent = WPDC_Email::send( $result );
 
 				if ( ! is_wp_error( $sent ) ) {
 					$mailed++;
@@ -730,7 +730,7 @@ class WPD_Admin {
 		}
 
 		set_transient(
-			'wpd_bulk_result_' . get_current_user_id(),
+			'wpdc_bulk_result_' . get_current_user_id(),
 			array(
 				'created' => $created,
 				'failed'  => $failed,
@@ -743,10 +743,10 @@ class WPD_Admin {
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'page'       => 'wpd-bulk',
-					'wpd_notice' => 'wpd-bulk-done',
+					'page'       => 'wpdc-bulk',
+					'wpdc_notice' => 'wpdc-bulk-done',
 				),
-				admin_url( 'edit.php?post_type=wpd_certificate' )
+				admin_url( 'edit.php?post_type=wpdc_certificate' )
 			)
 		);
 		exit;
@@ -756,7 +756,7 @@ class WPD_Admin {
 	 * ZIP со всеми сгенерированными PDF из последней массовой генерации.
 	 */
 	public function handle_bulk_zip() {
-		check_admin_referer( 'wpd_bulk_zip' );
+		check_admin_referer( 'wpdc_bulk_zip' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
@@ -766,14 +766,14 @@ class WPD_Admin {
 			wp_die( esc_html__( 'Расширение ZIP не установлено на сервере.', 'wp-diplom' ) );
 		}
 
-		$result = get_transient( 'wpd_bulk_result_' . get_current_user_id() );
+		$result = get_transient( 'wpdc_bulk_result_' . get_current_user_id() );
 		$ids    = is_array( $result ) && ! empty( $result['ids'] ) ? array_map( 'absint', $result['ids'] ) : array();
 
 		if ( empty( $ids ) ) {
 			wp_die( esc_html__( 'Нет сертификатов для архива.', 'wp-diplom' ) );
 		}
 
-		$tmp = wp_tempnam( 'wpd-bulk.zip' );
+		$tmp = wp_tempnam( 'wpdc-bulk.zip' );
 		$zip = new ZipArchive();
 
 		if ( true !== $zip->open( $tmp, ZipArchive::CREATE | ZipArchive::OVERWRITE ) ) {
@@ -781,13 +781,13 @@ class WPD_Admin {
 		}
 
 		foreach ( $ids as $id ) {
-			$file = WPD_Certificate::pdf( $id );
+			$file = WPDC_Certificate::pdf( $id );
 
 			if ( is_wp_error( $file ) ) {
 				continue;
 			}
 
-			$name = (string) get_post_meta( $id, '_wpd_number', true );
+			$name = (string) get_post_meta( $id, '_wpdc_number', true );
 			$zip->addFile( $file, ( $name ? $name : 'certificate-' . $id ) . '.pdf' );
 		}
 
@@ -800,35 +800,35 @@ class WPD_Admin {
 	 * Сохранение настроек.
 	 */
 	public function handle_settings() {
-		check_admin_referer( 'wpd_save_settings' );
+		check_admin_referer( 'wpdc_save_settings' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
 		}
 
 		$settings = array(
-			'organization'     => sanitize_text_field( wp_unslash( $_POST['wpd_organization'] ?? '' ) ),
-			'default_template' => absint( $_POST['wpd_default_template'] ?? 0 ),
-			'number_prefix'    => sanitize_text_field( wp_unslash( $_POST['wpd_number_prefix'] ?? 'WPD' ) ),
-			'number_padding'   => max( 1, min( 10, absint( $_POST['wpd_number_padding'] ?? 4 ) ) ),
-			'email_subject'    => sanitize_text_field( wp_unslash( $_POST['wpd_email_subject'] ?? '' ) ),
-			'email_body'       => sanitize_textarea_field( wp_unslash( $_POST['wpd_email_body'] ?? '' ) ),
-			'sender_name'      => sanitize_text_field( wp_unslash( $_POST['wpd_sender_name'] ?? '' ) ),
-			'sender_email'     => sanitize_email( wp_unslash( $_POST['wpd_sender_email'] ?? '' ) ),
-			'verify_page'      => absint( $_POST['wpd_verify_page'] ?? 0 ),
-			'enable_verify'    => empty( $_POST['wpd_enable_verify'] ) ? 0 : 1,
-			'sample_teacher'   => sanitize_text_field( wp_unslash( $_POST['wpd_sample_teacher'] ?? '' ) ),
+			'organization'     => sanitize_text_field( wp_unslash( $_POST['wpdc_organization'] ?? '' ) ),
+			'default_template' => absint( $_POST['wpdc_default_template'] ?? 0 ),
+			'number_prefix'    => sanitize_text_field( wp_unslash( $_POST['wpdc_number_prefix'] ?? 'WPD' ) ),
+			'number_padding'   => max( 1, min( 10, absint( $_POST['wpdc_number_padding'] ?? 4 ) ) ),
+			'email_subject'    => sanitize_text_field( wp_unslash( $_POST['wpdc_email_subject'] ?? '' ) ),
+			'email_body'       => sanitize_textarea_field( wp_unslash( $_POST['wpdc_email_body'] ?? '' ) ),
+			'sender_name'      => sanitize_text_field( wp_unslash( $_POST['wpdc_sender_name'] ?? '' ) ),
+			'sender_email'     => sanitize_email( wp_unslash( $_POST['wpdc_sender_email'] ?? '' ) ),
+			'verify_page'      => absint( $_POST['wpdc_verify_page'] ?? 0 ),
+			'enable_verify'    => empty( $_POST['wpdc_enable_verify'] ) ? 0 : 1,
+			'sample_teacher'   => sanitize_text_field( wp_unslash( $_POST['wpdc_sample_teacher'] ?? '' ) ),
 		);
 
-		update_option( 'wpd_settings', $settings );
+		update_option( 'wpdc_settings', $settings );
 
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'page'       => 'wpd-settings',
-					'wpd_notice' => 'wpd-settings-saved',
+					'page'       => 'wpdc-settings',
+					'wpdc_notice' => 'wpdc-settings-saved',
 				),
-				admin_url( 'edit.php?post_type=wpd_certificate' )
+				admin_url( 'edit.php?post_type=wpdc_certificate' )
 			)
 		);
 		exit;
@@ -846,9 +846,9 @@ class WPD_Admin {
 			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
 		}
 
-		$result = get_transient( 'wpd_bulk_result_' . get_current_user_id() );
+		$result = get_transient( 'wpdc_bulk_result_' . get_current_user_id() );
 
-		include WPD_DIR . 'admin/views/page-bulk.php';
+		include WPDC_DIR . 'admin/views/page-bulk.php';
 	}
 
 	/**
@@ -859,10 +859,10 @@ class WPD_Admin {
 			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
 		}
 
-		$settings  = WPD_Plugin::settings();
+		$settings  = WPDC_Plugin::settings();
 		$templates = get_posts(
 			array(
-				'post_type'      => 'wpd_template',
+				'post_type'      => 'wpdc_template',
 				'posts_per_page' => -1,
 				'post_status'    => 'publish',
 			)
@@ -870,7 +870,7 @@ class WPD_Admin {
 
 		$pages = get_pages();
 
-		include WPD_DIR . 'admin/views/page-settings.php';
+		include WPDC_DIR . 'admin/views/page-settings.php';
 	}
 
 	/* --------------------------------------------------------------------- */

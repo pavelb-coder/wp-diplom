@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Регистрация типов записей и таксономии.
  */
-class WPD_Post_Types {
+class WPDC_Post_Types {
 
 	/**
 	 * Хуки.
@@ -43,12 +43,12 @@ class WPD_Post_Types {
 		);
 
 		register_post_type(
-			'wpd_template',
+			'wpdc_template',
 			array(
 				'labels'              => $labels_template,
 				'public'              => false,
 				'show_ui'             => true,
-				'show_in_menu'        => 'edit.php?post_type=wpd_certificate',
+				'show_in_menu'        => 'edit.php?post_type=wpdc_certificate',
 				'show_in_rest'        => false,
 				'menu_icon'           => 'dashicons-media-default',
 				'capability_type'     => 'post',
@@ -74,7 +74,7 @@ class WPD_Post_Types {
 		);
 
 		register_post_type(
-			'wpd_certificate',
+			'wpdc_certificate',
 			array(
 				'labels'              => $labels_certificate,
 				'public'              => false,
@@ -100,8 +100,8 @@ class WPD_Post_Types {
 	 */
 	public function register_taxonomies() {
 		register_taxonomy(
-			'wpd_program',
-			array( 'wpd_certificate' ),
+			'wpdc_program',
+			array( 'wpdc_certificate' ),
 			array(
 				'labels'            => array(
 					'name'          => __( 'Программы', 'wp-diplom' ),
@@ -126,7 +126,7 @@ class WPD_Post_Types {
 	 * @return array
 	 */
 	public function updated_messages( $messages ) {
-		$messages['wpd_certificate'] = array(
+		$messages['wpdc_certificate'] = array(
 			0  => '',
 			1  => __( 'Сертификат обновлён.', 'wp-diplom' ),
 			6  => __( 'Сертификат создан.', 'wp-diplom' ),

@@ -2,29 +2,29 @@
  * Стили админки WP Diplom.
  */
 
-.wpd-form-table th {
+.wpdc-form-table th {
 	width: 200px;
 }
 
-.wpd-inline {
+.wpdc-inline {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
 	margin-right: 16px;
 }
 
-.wpd-grid {
+.wpdc-grid {
 	display: grid;
 	gap: 12px;
 	margin-top: 12px;
 }
 
-.wpd-grid--4 {
+.wpdc-grid--4 {
 	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 	max-width: 640px;
 }
 
-.wpd-grid label {
+.wpdc-grid label {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
@@ -34,7 +34,7 @@
 
 /* Медиа */
 
-.wpd-media__preview img {
+.wpdc-media__preview img {
 	max-width: 320px;
 	height: auto;
 	border: 1px solid #dcdcde;
@@ -42,76 +42,76 @@
 	background: #fff;
 }
 
-.wpd-media__preview:empty {
+.wpdc-media__preview:empty {
 	display: none;
 }
 
 /* Таблица полей */
 
-.wpd-fields__scroll {
+.wpdc-fields__scroll {
 	overflow-x: auto;
 	margin-bottom: 16px;
 }
 
-.wpd-fields-table {
+.wpdc-fields-table {
 	min-width: 1100px;
 }
 
-.wpd-fields-table th {
+.wpdc-fields-table th {
 	font-size: 12px;
 	font-weight: 600;
 	white-space: nowrap;
 }
 
-.wpd-fields-table td {
+.wpdc-fields-table td {
 	vertical-align: top;
 	padding: 6px 4px;
 }
 
-.wpd-fields-table textarea {
+.wpdc-fields-table textarea {
 	font-size: 12px;
 	font-family: Consolas, Monaco, monospace;
 }
 
-.wpd-num {
+.wpdc-num {
 	width: 62px;
 }
 
-.wpd-field-row__handle {
+.wpdc-field-row__handle {
 	cursor: grab;
 	color: #8c8f94;
 	width: 24px;
 }
 
-.wpd-field-row__flags {
+.wpdc-field-row__flags {
 	white-space: nowrap;
 }
 
-.wpd-field-row__flags label {
+.wpdc-field-row__flags label {
 	display: block;
 	font-size: 11px;
 }
 
-.wpd-remove-field {
+.wpdc-remove-field {
 	color: #b32d2e;
 	cursor: pointer;
 	padding: 2px;
 }
 
-.wpd-placeholders {
+.wpdc-placeholders {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 	gap: 4px 20px;
 	margin: 0;
 }
 
-.wpd-placeholders li,
-.wpd-list li {
+.wpdc-placeholders li,
+.wpdc-list li {
 	margin: 0 0 4px;
 	font-size: 13px;
 }
 
-.wpd-fields__help {
+.wpdc-fields__help {
 	background: #f6f7f7;
 	border-left: 4px solid #2271b1;
 	padding: 12px 16px;
@@ -120,14 +120,14 @@
 
 /* Действия в сайдбаре */
 
-.wpd-actions .button .dashicons,
-.wpd-actions .widefat .dashicons {
+.wpdc-actions .button .dashicons,
+.wpdc-actions .widefat .dashicons {
 	font-size: 16px;
 	line-height: 1.4;
 	vertical-align: text-bottom;
 }
 
-.wpd-meta-list {
+.wpdc-meta-list {
 	margin: 12px 0;
 	padding: 0;
 	list-style: none;
@@ -135,7 +135,7 @@
 	color: #50575e;
 }
 
-.wpd-meta-list li {
+.wpdc-meta-list li {
 	display: flex;
 	justify-content: space-between;
 	gap: 8px;
@@ -143,18 +143,18 @@
 	border-bottom: 1px dashed #dcdcde;
 }
 
-.wpd-custom-row {
+.wpdc-custom-row {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	margin: 0 0 6px;
 }
 
-.wpd-custom-key {
+.wpdc-custom-key {
 	width: 140px;
 }
 
-.wpd-remove-custom {
+.wpdc-remove-custom {
 	color: #b32d2e;
 	text-decoration: none;
 	font-size: 16px;
@@ -163,7 +163,7 @@
 
 /* Бейджи */
 
-.wpd-badge {
+.wpdc-badge {
 	display: inline-block;
 	padding: 2px 8px;
 	border-radius: 10px;
@@ -172,19 +172,19 @@
 	color: #50575e;
 }
 
-.wpd-badge--sent {
+.wpdc-badge--sent {
 	background: #edfaef;
 	color: #1a7f37;
 }
 
-.wpd-badge--revoked {
+.wpdc-badge--revoked {
 	background: #fcf0f1;
 	color: #b32d2e;
 }
 
 /* Страницы плагина */
 
-.wpd-wrap .wpd-columns {
+.wpdc-wrap .wpdc-columns {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) 340px;
 	gap: 24px;
@@ -193,12 +193,12 @@
 }
 
 @media (max-width: 1100px) {
-	.wpd-wrap .wpd-columns {
+	.wpdc-wrap .wpdc-columns {
 		grid-template-columns: minmax(0, 1fr);
 	}
 }
 
-.wpd-card {
+.wpdc-card {
 	background: #fff;
 	border: 1px solid #dcdcde;
 	border-radius: 6px;
@@ -206,12 +206,12 @@
 	margin-top: 20px;
 }
 
-.wpd-card h2 {
+.wpdc-card h2 {
 	margin-top: 0;
 	font-size: 15px;
 }
 
-.wpd-code {
+.wpdc-code {
 	background: #f6f7f7;
 	border: 1px solid #dcdcde;
 	border-radius: 4px;
@@ -221,6 +221,6 @@
 	white-space: pre;
 }
 
-.wpd-warning {
+.wpdc-warning {
 	color: #b32d2e;
 }

@@ -12,12 +12,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Главный класс плагина.
  */
-final class WPD_Plugin {
+final class WPDC_Plugin {
 
 	/**
 	 * Экземпляр (синглтон).
 	 *
-	 * @var WPD_Plugin|null
+	 * @var WPDC_Plugin|null
 	 */
 	private static $instance = null;
 
@@ -31,7 +31,7 @@ final class WPD_Plugin {
 	/**
 	 * Экземпляр плагина.
 	 *
-	 * @return WPD_Plugin
+	 * @return WPDC_Plugin
 	 */
 	public static function instance() {
 		if ( null === self::$instance ) {
@@ -52,24 +52,24 @@ final class WPD_Plugin {
 	 * Подключение файлов.
 	 */
 	private function load_files() {
-		require_once WPD_DIR . 'includes/class-wpd-post-types.php';
-		require_once WPD_DIR . 'includes/class-wpd-renderer.php';
-		require_once WPD_DIR . 'includes/class-wpd-certificate.php';
-		require_once WPD_DIR . 'includes/class-wpd-email.php';
-		require_once WPD_DIR . 'includes/class-wpd-admin.php';
-		require_once WPD_DIR . 'includes/class-wpd-frontend.php';
+		require_once WPDC_DIR . 'includes/class-wpdc-post-types.php';
+		require_once WPDC_DIR . 'includes/class-wpdc-renderer.php';
+		require_once WPDC_DIR . 'includes/class-wpdc-certificate.php';
+		require_once WPDC_DIR . 'includes/class-wpdc-email.php';
+		require_once WPDC_DIR . 'includes/class-wpdc-admin.php';
+		require_once WPDC_DIR . 'includes/class-wpdc-frontend.php';
 	}
 
 	/**
 	 * Инициализация хуков.
 	 */
 	public function init() {
-		load_plugin_textdomain( 'wp-diplom', false, dirname( WPD_BASENAME ) . '/languages' );
+		load_plugin_textdomain( 'wp-diplom', false, dirname( WPDC_BASENAME ) . '/languages' );
 
-		$this->components['post_types'] = new WPD_Post_Types();
-		$this->components['email']      = new WPD_Email();
-		$this->components['admin']      = new WPD_Admin();
-		$this->components['frontend']   = new WPD_Frontend();
+		$this->components['post_types'] = new WPDC_Post_Types();
+		$this->components['email']      = new WPDC_Email();
+		$this->components['admin']      = new WPDC_Admin();
+		$this->components['frontend']   = new WPDC_Frontend();
 
 		foreach ( $this->components as $component ) {
 			if ( method_exists( $component, 'hooks' ) ) {
@@ -78,7 +78,7 @@ final class WPD_Plugin {
 		}
 
 		add_action( 'init', array( $this, 'register_rewrite' ) );
-		add_filter( 'plugin_action_links_' . WPD_BASENAME, array( $this, 'action_links' ) );
+		add_filter( 'plugin_action_links_' . WPDC_BASENAME, array( $this, 'action_links' ) );
 	}
 
 	/**
@@ -97,7 +97,7 @@ final class WPD_Plugin {
 	public function register_rewrite() {
 		add_rewrite_rule(
 			'^certificate/([A-Za-z0-9]{4,32})/?$',
-			'index.php?wpd_code=$matches[1]',
+			'index.php?wpdc_code=$matches[1]',
 			'top'
 		);
 	}
@@ -109,7 +109,7 @@ final class WPD_Plugin {
 	 * @return string[]
 	 */
 	public function action_links( $links ) {
-		$url = admin_url( 'edit.php?post_type=wpd_template&page=wpd-settings' );
+		$url = admin_url( 'edit.php?post_type=wpdc_template&page=wpdc-settings' );
 
 		array_unshift(
 			$links,
@@ -140,7 +140,7 @@ final class WPD_Plugin {
 			'sample_teacher'  => '',
 		);
 
-		$saved = get_option( 'wpd_settings', array() );
+		$saved = get_option( 'wpdc_settings', array() );
 		$saved = is_array( $saved ) ? $saved : array();
 
 		$settings = array_merge( $defaults, $saved );
@@ -161,13 +161,13 @@ final class WPD_Plugin {
 	 * откажется включать плагин — вместо этого текст ошибки попадёт в админку.
 	 */
 	public static function activate() {
-		delete_option( 'wpd_activation_error' );
+		delete_option( 'wpdc_activation_error' );
 
 		try {
 			self::do_activate();
 		} catch ( Throwable $e ) {
 			update_option(
-				'wpd_activation_error',
+				'wpdc_activation_error',
 				array(
 					'message' => $e->getMessage(),
 					'file'    => $e->getFile(),
@@ -184,15 +184,15 @@ final class WPD_Plugin {
 	 * Непосредственно активация: бланк по умолчанию и правила перезаписи.
 	 */
 	private static function do_activate() {
-		require_once WPD_DIR . 'includes/class-wpd-post-types.php';
-		require_once WPD_DIR . 'includes/class-wpd-renderer.php';
+		require_once WPDC_DIR . 'includes/class-wpdc-post-types.php';
+		require_once WPDC_DIR . 'includes/class-wpdc-renderer.php';
 
-		$post_types = new WPD_Post_Types();
+		$post_types = new WPDC_Post_Types();
 		$post_types->register_post_types();
 
 		$existing = get_posts(
 			array(
-				'post_type'      => 'wpd_template',
+				'post_type'      => 'wpdc_template',
 				'posts_per_page' => 1,
 				'post_status'    => 'any',
 				'fields'         => 'ids',
@@ -202,7 +202,7 @@ final class WPD_Plugin {
 		if ( empty( $existing ) ) {
 			$template_id = wp_insert_post(
 				array(
-					'post_type'   => 'wpd_template',
+					'post_type'   => 'wpdc_template',
 					'post_title'  => __( 'Сертификат (по умолчанию)', 'wp-diplom' ),
 					'post_status' => 'publish',
 				),
@@ -210,13 +210,13 @@ final class WPD_Plugin {
 			);
 
 			if ( ! is_wp_error( $template_id ) ) {
-				update_post_meta( $template_id, '_wpd_page', 'a4_landscape' );
-				update_post_meta( $template_id, '_wpd_background_color', '#ffffff' );
-				update_post_meta( $template_id, '_wpd_background_fit', 'cover' );
-				update_post_meta( $template_id, '_wpd_document_title', __( 'Сертификат', 'wp-diplom' ) );
+				update_post_meta( $template_id, '_wpdc_page', 'a4_landscape' );
+				update_post_meta( $template_id, '_wpdc_background_color', '#ffffff' );
+				update_post_meta( $template_id, '_wpdc_background_fit', 'cover' );
+				update_post_meta( $template_id, '_wpdc_document_title', __( 'Сертификат', 'wp-diplom' ) );
 				update_post_meta(
 					$template_id,
-					'_wpd_border',
+					'_wpdc_border',
 					array(
 						'enabled' => 1,
 						'color'   => '#2f6fed',
@@ -225,16 +225,16 @@ final class WPD_Plugin {
 						'inset_y' => 12,
 					)
 				);
-				update_post_meta( $template_id, '_wpd_fields', WPD_Renderer::default_fields() );
+				update_post_meta( $template_id, '_wpdc_fields', WPDC_Renderer::default_fields() );
 
-				$settings                     = (array) get_option( 'wpd_settings', array() );
+				$settings                     = (array) get_option( 'wpdc_settings', array() );
 				$settings['default_template'] = $template_id;
-				update_option( 'wpd_settings', $settings );
+				update_option( 'wpdc_settings', $settings );
 			}
 		}
 
-		if ( ! wp_next_scheduled( 'wpd_cleanup_temp' ) ) {
-			wp_schedule_event( time() + DAY_IN_SECONDS, 'daily', 'wpd_cleanup_temp' );
+		if ( ! wp_next_scheduled( 'wpdc_cleanup_temp' ) ) {
+			wp_schedule_event( time() + DAY_IN_SECONDS, 'daily', 'wpdc_cleanup_temp' );
 		}
 
 		flush_rewrite_rules();
@@ -244,7 +244,7 @@ final class WPD_Plugin {
 	 * Деактивация.
 	 */
 	public static function deactivate() {
-		wp_clear_scheduled_hook( 'wpd_cleanup_temp' );
+		wp_clear_scheduled_hook( 'wpdc_cleanup_temp' );
 		flush_rewrite_rules();
 	}
 
@@ -256,7 +256,7 @@ final class WPD_Plugin {
 	public static function storage_dir() {
 		$uploads = wp_upload_dir( null, false );
 
-		$dir = trailingslashit( $uploads['basedir'] ) . 'wpd-certificates';
+		$dir = trailingslashit( $uploads['basedir'] ) . 'wpdc-certificates';
 
 		if ( ! file_exists( $dir ) ) {
 			wp_mkdir_p( $dir );

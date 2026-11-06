@@ -10,21 +10,21 @@
  * @package WP_Diplom
  */
 
-if ( ! defined( 'WPD_DIR' ) ) {
-	define( 'WPD_DIR', dirname( __DIR__ ) . '/' );
+if ( ! defined( 'WPDC_DIR' ) ) {
+	define( 'WPDC_DIR', dirname( __DIR__ ) . '/' );
 }
 
 require_once __DIR__ . '/wp-stubs.php';
 
-require_once WPD_DIR . 'includes/class-wpd-renderer.php';
-require_once WPD_DIR . 'includes/class-wpd-certificate.php';
-require_once WPD_DIR . 'includes/class-wpd-admin.php';
-require_once WPD_DIR . 'includes/class-wpd-email.php';
+require_once WPDC_DIR . 'includes/class-wpdc-renderer.php';
+require_once WPDC_DIR . 'includes/class-wpdc-certificate.php';
+require_once WPDC_DIR . 'includes/class-wpdc-admin.php';
+require_once WPDC_DIR . 'includes/class-wpdc-email.php';
 
 /**
  * Заглушка главного класса плагина: только настройки и каталог хранения.
  */
-class WPD_Plugin {
+class WPDC_Plugin {
 
 	/**
 	 * Настройки.
@@ -46,7 +46,7 @@ class WPD_Plugin {
 			'enable_verify'    => 1,
 		);
 
-		$saved = get_option( 'wpd_settings', array() );
+		$saved = get_option( 'wpdc_settings', array() );
 		$saved = is_array( $saved ) ? $saved : array();
 		$all   = array_merge( $defaults, $saved );
 
@@ -59,7 +59,7 @@ class WPD_Plugin {
 	 * @return string
 	 */
 	public static function storage_dir() {
-		$dir = trailingslashit( $GLOBALS['wpd_test']['uploads'] ) . 'wpd-certificates';
+		$dir = trailingslashit( $GLOBALS['wpdc_test']['uploads'] ) . 'wpdc-certificates';
 
 		if ( ! is_dir( $dir ) ) {
 			wp_mkdir_p( $dir );
@@ -90,37 +90,37 @@ function check( $condition, $label ) {
 // --- Бланк по умолчанию -------------------------------------------------
 $template_id = wp_insert_post(
 	array(
-		'post_type'   => 'wpd_template',
+		'post_type'   => 'wpdc_template',
 		'post_status' => 'publish',
 		'post_title'  => 'Основной бланк',
 	)
 );
 
-update_post_meta( $template_id, '_wpd_page', 'a4_landscape' );
-update_post_meta( $template_id, '_wpd_border', array( 'enabled' => 1, 'color' => '#2f6fed', 'width' => 0.8, 'inset_x' => 12, 'inset_y' => 12 ) );
-update_post_meta( $template_id, '_wpd_fields', WPD_Renderer::default_fields() );
+update_post_meta( $template_id, '_wpdc_page', 'a4_landscape' );
+update_post_meta( $template_id, '_wpdc_border', array( 'enabled' => 1, 'color' => '#2f6fed', 'width' => 0.8, 'inset_x' => 12, 'inset_y' => 12 ) );
+update_post_meta( $template_id, '_wpdc_fields', WPDC_Renderer::default_fields() );
 
-$config = WPD_Certificate::template_config( $template_id );
+$config = WPDC_Certificate::template_config( $template_id );
 
 check( 'a4_landscape' === $config['page'], 'template_config вернул формат страницы' );
 check( 9 === count( $config['fields'] ), 'template_config вернул 9 полей' );
 check( true === $config['border']['enabled'], 'рамка включена' );
 check( 'Тестовый сайт' === $config['organization'], 'организация подставлена из настроек' );
 
-$fallback = WPD_Certificate::template_config( 0 );
+$fallback = WPDC_Certificate::template_config( 0 );
 check( 9 === count( $fallback['fields'] ), 'без бланка используются поля по умолчанию' );
 
 // --- Нумерация ----------------------------------------------------------
 $year = current_time( 'Y' );
 
-$first  = WPD_Certificate::next_number();
-$second = WPD_Certificate::next_number();
+$first  = WPDC_Certificate::next_number();
+$second = WPDC_Certificate::next_number();
 
 check( 'WPD-' . $year . '-0001' === $first, 'первый номер: ' . $first );
 check( 'WPD-' . $year . '-0002' === $second, 'номер инкрементируется: ' . $second );
 
 // --- Создание сертификата ----------------------------------------------
-$created = WPD_Certificate::create(
+$created = WPDC_Certificate::create(
 	array(
 		'recipient'   => 'Иванов Иван Иванович',
 		'email'       => 'ivan@example.com',
@@ -135,7 +135,7 @@ $created = WPD_Certificate::create(
 
 check( is_int( $created ) && $created > 0, 'сертификат создан, id = ' . var_export( $created, true ) );
 
-$data = WPD_Certificate::data( $created );
+$data = WPDC_Certificate::data( $created );
 
 check( 'Иванов Иван Иванович' === $data['recipient_name'], 'имя получателя сохранено' );
 check( 'ivan@example.com' === $data['recipient_email'], 'e-mail сохранён' );
@@ -144,21 +144,21 @@ check( 'ВР-21' === $data['custom']['group'], 'дополнительное п�
 check( 'WPD-' . $year . '-0003' === $data['number'], 'номер присвоен автоматически: ' . $data['number'] );
 check( 12 === strlen( $data['code'] ) && ctype_xdigit( $data['code'] ), 'код проверки — 12 hex-символов' );
 
-$empty = WPD_Certificate::create( array( 'recipient' => '   ' ) );
+$empty = WPDC_Certificate::create( array( 'recipient' => '   ' ) );
 
 check( is_wp_error( $empty ), 'пустое имя получателя → WP_Error' );
 
 // --- Поиск по коду -----------------------------------------------------
-$found = WPD_Certificate::by_code( strtoupper( $data['code'] ) );
+$found = WPDC_Certificate::by_code( strtoupper( $data['code'] ) );
 
 check( $found && (int) $found->ID === $created, 'поиск по коду работает (регистр не важен)' );
 
-$missing = WPD_Certificate::by_code( 'deadbeefcafe' );
+$missing = WPDC_Certificate::by_code( 'deadbeefcafe' );
 
 check( null === $missing, 'несуществующий код → null' );
 
 // --- Генерация PDF и кэш ----------------------------------------------
-$pdf_one = WPD_Certificate::pdf( $created );
+$pdf_one = WPDC_Certificate::pdf( $created );
 
 check( ! is_wp_error( $pdf_one ), 'PDF сгенерирован без ошибок' );
 check( is_string( $pdf_one ) && file_exists( $pdf_one ), 'файл PDF существует: ' . basename( (string) $pdf_one ) );
@@ -173,21 +173,21 @@ if ( is_string( $pdf_one ) && file_exists( $pdf_one ) ) {
 	$first_mtime = filemtime( $pdf_one );
 	sleep( 1 );
 
-	$pdf_two = WPD_Certificate::pdf( $created );
+	$pdf_two = WPDC_Certificate::pdf( $created );
 
 	check( filemtime( $pdf_two ) === $first_mtime, 'повторный вызов берёт PDF из кэша' );
 
-	WPD_Certificate::delete_pdf( $created );
+	WPDC_Certificate::delete_pdf( $created );
 
 	check( ! file_exists( $pdf_one ), 'delete_pdf удалил файл' );
 
-	$pdf_three = WPD_Certificate::pdf( $created );
+	$pdf_three = WPDC_Certificate::pdf( $created );
 
 	check( ! is_wp_error( $pdf_three ) && file_exists( $pdf_three ), 'после сброса PDF пересобран' );
 }
 
 // --- CSV-парсер --------------------------------------------------------
-$admin = new WPD_Admin();
+$admin = new WPDC_Admin();
 
 $csv_semicolon = "name;email;course;hours;group\n"
 	. "Иванов Иван;ivan@example.com;Веб-разработка;72;ВР-21\n"
@@ -218,15 +218,15 @@ check( 'Без почты' === $rows_broken[0]['recipient'], 'строка бе�
 check( array() === $admin->parse_csv( '' ), 'пустой CSV → пустой массив' );
 
 // --- Письмо ------------------------------------------------------------
-$message = WPD_Email::compose( $created );
+$message = WPDC_Email::compose( $created );
 
 check( false !== strpos( $message['subject'], 'Веб-разработка на WordPress' ), 'тема письма подставила {course_title}' );
 check( false !== strpos( $message['body'], 'Иванов Иван Иванович' ), 'текст письма подставил {recipient_name}' );
 
-$no_email = WPD_Certificate::create( array( 'recipient' => 'Без Почты' ) );
-$send     = WPD_Email::send( $no_email );
+$no_email = WPDC_Certificate::create( array( 'recipient' => 'Без Почты' ) );
+$send     = WPDC_Email::send( $no_email );
 
-check( is_wp_error( $send ) && 'wpd_no_email' === $send->get_error_code(), 'без e-mail отправка отклонена' );
+check( is_wp_error( $send ) && 'wpdc_no_email' === $send->get_error_code(), 'без e-mail отправка отклонена' );
 
 echo "\n";
 if ( $failures > 0 ) {

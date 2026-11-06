@@ -10,13 +10,13 @@
  * @package WP_Diplom
  */
 
-define( 'WPD_PDF_STANDALONE', true );
+define( 'WPDC_PDF_STANDALONE', true );
 
 $root = dirname( __DIR__ );
 
-require_once $root . '/includes/pdf/class-wpd-pdf-writer.php';
+require_once $root . '/includes/pdf/class-wpdc-pdf-writer.php';
 
-$output = $argv[1] ?? sys_get_temp_dir() . '/wpd-smoke.pdf';
+$output = $argv[1] ?? sys_get_temp_dir() . '/wpdc-smoke.pdf';
 $fonts  = array(
 	'sans'  => array(
 		'regular' => $root . '/assets/fonts/DejaVuSans.ttf',
@@ -47,7 +47,7 @@ function check( $condition, $label ) {
 }
 
 // --- Проверка парсера шрифта ---------------------------------------------
-$font = WPD_PDF_Font::load( $fonts['sans']['regular'] );
+$font = WPDC_PDF_Font::load( $fonts['sans']['regular'] );
 
 check( null !== $font, 'шрифт DejaVuSans загружен' );
 check( $font && $font->units_per_em === 2048, 'unitsPerEm = 2048' );
@@ -94,7 +94,7 @@ check( 2 === count( $map ), 'ToUnicode-карта собрала 2 глифа' )
  * @param bool  $alpha   Писать RGBA (color type 6) вместо RGB.
  * @return string
  */
-function wpd_make_png( $width, $height, $pixel, $alpha = false ) {
+function wpdc_make_png( $width, $height, $pixel, $alpha = false ) {
 	$raw = '';
 
 	for ( $y = 0; $y < $height; $y++ ) {
@@ -125,8 +125,8 @@ function wpd_make_png( $width, $height, $pixel, $alpha = false ) {
 		. $chunk( 'IEND', '' );
 }
 
-$png_path = sys_get_temp_dir() . '/wpd-test-bg.png';
-$png_data = wpd_make_png(
+$png_path = sys_get_temp_dir() . '/wpdc-test-bg.png';
+$png_data = wpdc_make_png(
 	800,
 	600,
 	static function ( $x, $y ) {
@@ -141,7 +141,7 @@ file_put_contents( $png_path, $png_data );
 
 check( file_exists( $png_path ), 'тестовый PNG создан (' . strlen( $png_data ) . ' байт)' );
 
-$image_info = WPD_PDF_Writer::read_image( $png_path );
+$image_info = WPDC_PDF_Writer::read_image( $png_path );
 
 check( is_array( $image_info ) && 800 === $image_info['width'] && 600 === $image_info['height'], 'PNG декодирован: 800x600' );
 check( is_array( $image_info ) && 'raw' === $image_info['kind'], 'PNG отдан как сырые RGB-данные (без GD)' );
@@ -158,11 +158,11 @@ if ( is_array( $image_info ) ) {
 }
 
 // PNG с прозрачностью → должен появиться /SMask.
-$rgba_path = sys_get_temp_dir() . '/wpd-test-alpha.png';
+$rgba_path = sys_get_temp_dir() . '/wpdc-test-alpha.png';
 
 file_put_contents(
 	$rgba_path,
-	wpd_make_png(
+	wpdc_make_png(
 		40,
 		40,
 		static function ( $x ) {
@@ -172,7 +172,7 @@ file_put_contents(
 	)
 );
 
-$rgba_info = WPD_PDF_Writer::read_image( $rgba_path );
+$rgba_info = WPDC_PDF_Writer::read_image( $rgba_path );
 
 check(
 	is_array( $rgba_info ) && is_string( $rgba_info['smask'] ) && strlen( $rgba_info['smask'] ) === 1600,
@@ -180,9 +180,9 @@ check(
 );
 
 // --- Построение документа ------------------------------------------------
-$mm = WPD_PDF_Writer::MM_TO_PT;
+$mm = WPDC_PDF_Writer::MM_TO_PT;
 
-$pdf = new WPD_PDF_Writer( $fonts );
+$pdf = new WPDC_PDF_Writer( $fonts );
 
 check( $pdf->has_fonts(), 'шрифты зарегистрированы в документе' );
 

@@ -22,16 +22,16 @@ else
 fi
 
 ## 2. Версия не должна хардкодиться в коде — только читаться из заголовка
-DEFINE_LINE="$(grep -E "define\(\s*'WPD_VERSION'" "$MAIN" || true)"
+DEFINE_LINE="$(grep -E "define\(\s*'WPDC_VERSION'" "$MAIN" || true)"
 
 if [[ -z "$DEFINE_LINE" ]]; then
-	echo "✗ $MAIN: константа WPD_VERSION не найдена"
+	echo "✗ $MAIN: константа WPDC_VERSION не найдена"
 	errors=$((errors + 1))
-elif [[ "$DEFINE_LINE" != *"wpd_version()"* ]]; then
+elif [[ "$DEFINE_LINE" != *"wpdc_version()"* ]]; then
 	echo "✗ $MAIN: версия захардкожена → $DEFINE_LINE"
 	errors=$((errors + 1))
 else
-	echo "✓ $MAIN: WPD_VERSION читается из заголовка"
+	echo "✓ $MAIN: WPDC_VERSION читается из заголовка"
 fi
 
 ## 3. readme.txt: Stable tag совпадает

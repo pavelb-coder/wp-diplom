@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Фронтенд плагина.
  */
-class WPD_Frontend {
+class WPDC_Frontend {
 
 	/**
 	 * Хуки.
@@ -22,41 +22,41 @@ class WPD_Frontend {
 		add_action( 'template_redirect', array( $this, 'maybe_serve_pdf' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'assets' ) );
 
-		add_shortcode( 'wpd_verify', array( $this, 'shortcode_verify' ) );
-		add_shortcode( 'wpd_certificate', array( $this, 'shortcode_certificate' ) );
+		add_shortcode( 'wpdc_verify', array( $this, 'shortcode_verify' ) );
+		add_shortcode( 'wpdc_certificate', array( $this, 'shortcode_certificate' ) );
 	}
 
 	/**
 	 * Переменная запроса для кода.
 	 */
 	public function add_query_var() {
-		add_rewrite_tag( '%wpd_code%', '([A-Za-z0-9]{4,32})' );
+		add_rewrite_tag( '%wpdc_code%', '([A-Za-z0-9]{4,32})' );
 	}
 
 	/**
 	 * Стили.
 	 */
 	public function assets() {
-		wp_enqueue_style( 'wpd-frontend', WPD_URL . 'assets/css/frontend.css', array(), WPD_VERSION );
+		wp_enqueue_style( 'wpdc-frontend', WPDC_URL . 'assets/css/frontend.css', array(), WPDC_VERSION );
 	}
 
 	/**
 	 * Отдаёт PDF по адресу /certificate/{код}/.
 	 */
 	public function maybe_serve_pdf() {
-		$code = get_query_var( 'wpd_code' );
+		$code = get_query_var( 'wpdc_code' );
 
 		if ( ! $code ) {
 			return;
 		}
 
-		$settings = WPD_Plugin::settings();
+		$settings = WPDC_Plugin::settings();
 
 		if ( empty( $settings['enable_verify'] ) ) {
 			wp_die( esc_html__( 'Проверка сертификатов отключена.', 'wp-diplom' ), 404 );
 		}
 
-		$post = WPD_Certificate::by_code( $code );
+		$post = WPDC_Certificate::by_code( $code );
 
 		if ( ! $post ) {
 			status_header( 404 );
@@ -69,7 +69,7 @@ class WPD_Frontend {
 			);
 		}
 
-		if ( get_post_meta( $post->ID, '_wpd_revoked', true ) ) {
+		if ( get_post_meta( $post->ID, '_wpdc_revoked', true ) ) {
 			wp_die(
 				esc_html__( 'Сертификат отозван.', 'wp-diplom' ),
 				esc_html__( 'Сертификат отозван', 'wp-diplom' ),
@@ -77,7 +77,7 @@ class WPD_Frontend {
 			);
 		}
 
-		$file = WPD_Certificate::pdf( $post->ID );
+		$file = WPDC_Certificate::pdf( $post->ID );
 
 		if ( is_wp_error( $file ) ) {
 			wp_die( esc_html( $file->get_error_message() ) );
@@ -96,7 +96,7 @@ class WPD_Frontend {
 	}
 
 	/**
-	 * Шорткод [wpd_verify].
+	 * Шорткод [wpdc_verify].
 	 *
 	 * @param array $atts Атрибуты.
 	 * @return string
@@ -107,32 +107,32 @@ class WPD_Frontend {
 				'title' => __( 'Проверка сертификата', 'wp-diplom' ),
 			),
 			$atts,
-			'wpd_verify'
+			'wpdc_verify'
 		);
 
-		$settings = WPD_Plugin::settings();
+		$settings = WPDC_Plugin::settings();
 
 		if ( empty( $settings['enable_verify'] ) ) {
 			return '';
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$code = isset( $_GET['wpd_code'] ) ? sanitize_text_field( wp_unslash( $_GET['wpd_code'] ) ) : '';
+		$code = isset( $_GET['wpdc_code'] ) ? sanitize_text_field( wp_unslash( $_GET['wpdc_code'] ) ) : '';
 
 		ob_start();
 		?>
-		<div class="wpd-verify">
-			<h2 class="wpd-verify__title"><?php echo esc_html( $atts['title'] ); ?></h2>
+		<div class="wpdc-verify">
+			<h2 class="wpdc-verify__title"><?php echo esc_html( $atts['title'] ); ?></h2>
 
-			<form class="wpd-verify__form" method="get" action="">
-				<label class="wpd-verify__label" for="wpd-verify-code">
+			<form class="wpdc-verify__form" method="get" action="">
+				<label class="wpdc-verify__label" for="wpdc-verify-code">
 					<?php esc_html_e( 'Введите код с сертификата', 'wp-diplom' ); ?>
 				</label>
 
-				<div class="wpd-verify__row">
-					<input type="text" id="wpd-verify-code" name="wpd_code" class="wpd-verify__input"
+				<div class="wpdc-verify__row">
+					<input type="text" id="wpdc-verify-code" name="wpdc_code" class="wpdc-verify__input"
 						value="<?php echo esc_attr( $code ); ?>" placeholder="a1b2c3d4e5f6" autocomplete="off">
-					<button type="submit" class="wpd-button"><?php esc_html_e( 'Проверить', 'wp-diplom' ); ?></button>
+					<button type="submit" class="wpdc-button"><?php esc_html_e( 'Проверить', 'wp-diplom' ); ?></button>
 				</div>
 			</form>
 
@@ -152,23 +152,23 @@ class WPD_Frontend {
 	 * @return string HTML.
 	 */
 	private function verify_result( $code ) {
-		$post = WPD_Certificate::by_code( $code );
+		$post = WPDC_Certificate::by_code( $code );
 
 		if ( ! $post ) {
 			return sprintf(
-				'<div class="wpd-result wpd-result--invalid"><p>%s</p></div>',
+				'<div class="wpdc-result wpdc-result--invalid"><p>%s</p></div>',
 				esc_html__( 'Сертификат с таким кодом не найден. Проверьте код или обратитесь к организации, выдавшей документ.', 'wp-diplom' )
 			);
 		}
 
-		if ( get_post_meta( $post->ID, '_wpd_revoked', true ) ) {
+		if ( get_post_meta( $post->ID, '_wpdc_revoked', true ) ) {
 			return sprintf(
-				'<div class="wpd-result wpd-result--revoked"><p>%s</p></div>',
+				'<div class="wpdc-result wpdc-result--revoked"><p>%s</p></div>',
 				esc_html__( 'Сертификат отозван и недействителен.', 'wp-diplom' )
 			);
 		}
 
-		$data = WPD_Certificate::data( $post->ID );
+		$data = WPDC_Certificate::data( $post->ID );
 
 		$rows = array(
 			__( 'Получатель', 'wp-diplom' )  => $data['recipient_name'],
@@ -179,9 +179,9 @@ class WPD_Frontend {
 			__( 'Преподаватель', 'wp-diplom' ) => $data['teacher'],
 		);
 
-		$html  = '<div class="wpd-result wpd-result--valid">';
-		$html .= '<p class="wpd-result__status">' . esc_html__( 'Сертификат действителен', 'wp-diplom' ) . '</p>';
-		$html .= '<table class="wpd-result__table"><tbody>';
+		$html  = '<div class="wpdc-result wpdc-result--valid">';
+		$html .= '<p class="wpdc-result__status">' . esc_html__( 'Сертификат действителен', 'wp-diplom' ) . '</p>';
+		$html .= '<table class="wpdc-result__table"><tbody>';
 
 		foreach ( $rows as $label => $value ) {
 			if ( '' === trim( (string) $value ) ) {
@@ -197,7 +197,7 @@ class WPD_Frontend {
 
 		$html .= '</tbody></table>';
 		$html .= sprintf(
-			'<p><a class="wpd-button wpd-button--outline" href="%s" target="_blank" rel="noopener">%s</a></p>',
+			'<p><a class="wpdc-button wpdc-button--outline" href="%s" target="_blank" rel="noopener">%s</a></p>',
 			esc_url( home_url( '/certificate/' . $data['code'] . '/' ) ),
 			esc_html__( 'Открыть PDF', 'wp-diplom' )
 		);
@@ -207,7 +207,7 @@ class WPD_Frontend {
 	}
 
 	/**
-	 * Шорткод [wpd_certificate id="123"].
+	 * Шорткод [wpdc_certificate id="123"].
 	 *
 	 * @param array $atts Атрибуты.
 	 * @return string
@@ -220,44 +220,44 @@ class WPD_Frontend {
 				'title' => '',
 			),
 			$atts,
-			'wpd_certificate'
+			'wpdc_certificate'
 		);
 
 		$post = $atts['code']
-			? WPD_Certificate::by_code( $atts['code'] )
+			? WPDC_Certificate::by_code( $atts['code'] )
 			: get_post( absint( $atts['id'] ) );
 
-		if ( ! $post || 'wpd_certificate' !== $post->post_type ) {
+		if ( ! $post || 'wpdc_certificate' !== $post->post_type ) {
 			return '';
 		}
 
-		if ( 'publish' !== $post->post_status || get_post_meta( $post->ID, '_wpd_revoked', true ) ) {
+		if ( 'publish' !== $post->post_status || get_post_meta( $post->ID, '_wpdc_revoked', true ) ) {
 			return '';
 		}
 
-		$data  = WPD_Certificate::data( $post->ID );
+		$data  = WPDC_Certificate::data( $post->ID );
 		$title = $atts['title'] ? $atts['title'] : $data['number'];
 
 		ob_start();
 		?>
-		<div class="wpd-card-certificate">
-			<div class="wpd-card-certificate__body">
+		<div class="wpdc-card-certificate">
+			<div class="wpdc-card-certificate__body">
 				<?php if ( $title ) : ?>
-					<p class="wpd-card-certificate__number"><?php echo esc_html( $title ); ?></p>
+					<p class="wpdc-card-certificate__number"><?php echo esc_html( $title ); ?></p>
 				<?php endif; ?>
 
-				<p class="wpd-card-certificate__name"><?php echo esc_html( $data['recipient_name'] ); ?></p>
+				<p class="wpdc-card-certificate__name"><?php echo esc_html( $data['recipient_name'] ); ?></p>
 
 				<?php if ( $data['course_title'] ) : ?>
-					<p class="wpd-card-certificate__course"><?php echo esc_html( $data['course_title'] ); ?></p>
+					<p class="wpdc-card-certificate__course"><?php echo esc_html( $data['course_title'] ); ?></p>
 				<?php endif; ?>
 
 				<?php if ( $data['date'] ) : ?>
-					<p class="wpd-card-certificate__date"><?php echo esc_html( $data['date'] ); ?></p>
+					<p class="wpdc-card-certificate__date"><?php echo esc_html( $data['date'] ); ?></p>
 				<?php endif; ?>
 
 				<p>
-					<a class="wpd-button" href="<?php echo esc_url( home_url( '/certificate/' . $data['code'] . '/' ) ); ?>"
+					<a class="wpdc-button" href="<?php echo esc_url( home_url( '/certificate/' . $data['code'] . '/' ) ); ?>"
 						target="_blank" rel="noopener">
 						<?php esc_html_e( 'Скачать PDF', 'wp-diplom' ); ?>
 					</a>

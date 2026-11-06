@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Письма с вложением PDF.
  */
-class WPD_Email {
+class WPDC_Email {
 
 	/**
 	 * Хуки.
@@ -28,7 +28,7 @@ class WPD_Email {
 	 * @return string
 	 */
 	public function filter_from_name( $name ) {
-		$settings = WPD_Plugin::settings();
+		$settings = WPDC_Plugin::settings();
 
 		return $settings['sender_name'] ? $settings['sender_name'] : $name;
 	}
@@ -40,9 +40,9 @@ class WPD_Email {
 	 * @return array<string, mixed>
 	 */
 	public static function email_data( $post_id ) {
-		$data = WPD_Certificate::data( $post_id );
+		$data = WPDC_Certificate::data( $post_id );
 
-		$data['verify_url'] = WPD_Certificate::verify_url( $data['code'] );
+		$data['verify_url'] = WPDC_Certificate::verify_url( $data['code'] );
 		$data['site_url']   = home_url( '/' );
 
 		return $data;
@@ -55,12 +55,12 @@ class WPD_Email {
 	 * @return array{subject: string, body: string}
 	 */
 	public static function compose( $post_id ) {
-		$settings = WPD_Plugin::settings();
+		$settings = WPDC_Plugin::settings();
 		$data     = self::email_data( $post_id );
 
 		return array(
-			'subject' => WPD_Renderer::replace_placeholders( (string) $settings['email_subject'], $data ),
-			'body'    => WPD_Renderer::replace_placeholders( (string) $settings['email_body'], $data ),
+			'subject' => WPDC_Renderer::replace_placeholders( (string) $settings['email_subject'], $data ),
+			'body'    => WPDC_Renderer::replace_placeholders( (string) $settings['email_body'], $data ),
 		);
 	}
 
@@ -73,24 +73,24 @@ class WPD_Email {
 	 */
 	public static function send( $post_id, $force = false ) {
 		$post_id = absint( $post_id );
-		$email   = (string) get_post_meta( $post_id, '_wpd_email', true );
+		$email   = (string) get_post_meta( $post_id, '_wpdc_email', true );
 
 		if ( ! is_email( $email ) ) {
-			return new WP_Error( 'wpd_no_email', __( 'У сертификата нет корректного e-mail.', 'wp-diplom' ) );
+			return new WP_Error( 'wpdc_no_email', __( 'У сертификата нет корректного e-mail.', 'wp-diplom' ) );
 		}
 
-		if ( ! $force && '' !== WPD_Certificate::sent_at( $post_id ) ) {
-			return new WP_Error( 'wpd_already_sent', __( 'Сертификат уже отправляли. Используйте повторную отправку.', 'wp-diplom' ) );
+		if ( ! $force && '' !== WPDC_Certificate::sent_at( $post_id ) ) {
+			return new WP_Error( 'wpdc_already_sent', __( 'Сертификат уже отправляли. Используйте повторную отправку.', 'wp-diplom' ) );
 		}
 
-		$pdf = WPD_Certificate::pdf( $post_id );
+		$pdf = WPDC_Certificate::pdf( $post_id );
 
 		if ( is_wp_error( $pdf ) ) {
 			return $pdf;
 		}
 
 		$message  = self::compose( $post_id );
-		$settings = WPD_Plugin::settings();
+		$settings = WPDC_Plugin::settings();
 
 		$headers = array( 'Content-Type: text/plain; charset=UTF-8' );
 
@@ -101,11 +101,11 @@ class WPD_Email {
 		$sent = wp_mail( $email, $message['subject'], $message['body'], $headers, array( $pdf ) );
 
 		if ( ! $sent ) {
-			return new WP_Error( 'wpd_mail_failed', __( 'wp_mail() не смог отправить письмо. Проверьте настройки SMTP.', 'wp-diplom' ) );
+			return new WP_Error( 'wpdc_mail_failed', __( 'wp_mail() не смог отправить письмо. Проверьте настройки SMTP.', 'wp-diplom' ) );
 		}
 
-		update_post_meta( $post_id, '_wpd_sent_at', current_time( 'mysql' ) );
-		update_post_meta( $post_id, '_wpd_sent_to', $email );
+		update_post_meta( $post_id, '_wpdc_sent_at', current_time( 'mysql' ) );
+		update_post_meta( $post_id, '_wpdc_sent_to', $email );
 
 		return true;
 	}

@@ -9,7 +9,7 @@
  * @package WP_Diplom
  */
 
-// Константы плагина (WPD_DIR, WPD_URL, WPD_VERSION, WPD_BASENAME) определяет
+// Константы плагина (WPDC_DIR, WPDC_URL, WPDC_VERSION, WPDC_BASENAME) определяет
 // сам плагин либо тест-скрипт — здесь их дублировать нельзя.
 if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/' );
@@ -18,12 +18,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'MINUTE_IN_SECONDS', 60 );
 define( 'DAY_IN_SECONDS', 86400 );
 
-$GLOBALS['wpd_test'] = array(
+$GLOBALS['wpdc_test'] = array(
 	'posts'   => array(),
 	'meta'    => array(),
 	'options' => array(),
 	'next_id' => 100,
-	'uploads' => sys_get_temp_dir() . '/wpd-test-uploads-' . getmypid(),
+	'uploads' => sys_get_temp_dir() . '/wpdc-test-uploads-' . getmypid(),
 );
 
 /**
@@ -99,9 +99,9 @@ function load_plugin_textdomain( ...$args ) {}
 
 /* --- Записи ----------------------------------------------------------- */
 function wp_insert_post( $args, $wp_error = false ) {
-	$id = $GLOBALS['wpd_test']['next_id']++;
+	$id = $GLOBALS['wpdc_test']['next_id']++;
 
-	$GLOBALS['wpd_test']['posts'][ $id ] = array(
+	$GLOBALS['wpdc_test']['posts'][ $id ] = array(
 		'ID'          => $id,
 		'post_type'   => $args['post_type'] ?? 'post',
 		'post_status' => $args['post_status'] ?? 'publish',
@@ -114,11 +114,11 @@ function wp_insert_post( $args, $wp_error = false ) {
 function get_post( $post = null ) {
 	$id = is_object( $post ) ? (int) $post->ID : (int) $post;
 
-	if ( ! isset( $GLOBALS['wpd_test']['posts'][ $id ] ) ) {
+	if ( ! isset( $GLOBALS['wpdc_test']['posts'][ $id ] ) ) {
 		return null;
 	}
 
-	return (object) $GLOBALS['wpd_test']['posts'][ $id ];
+	return (object) $GLOBALS['wpdc_test']['posts'][ $id ];
 }
 
 function get_post_type( $post = null ) {
@@ -135,7 +135,7 @@ function get_posts( $args = array() ) {
 	$meta_val = $args['meta_value'] ?? '';
 	$out      = array();
 
-	foreach ( $GLOBALS['wpd_test']['posts'] as $post ) {
+	foreach ( $GLOBALS['wpdc_test']['posts'] as $post ) {
 		if ( ! in_array( $post['post_type'], $types, true ) ) {
 			continue;
 		}
@@ -183,14 +183,14 @@ function get_posts( $args = array() ) {
 }
 
 function wp_delete_post( $id, $force = false ) {
-	unset( $GLOBALS['wpd_test']['posts'][ (int) $id ] );
+	unset( $GLOBALS['wpdc_test']['posts'][ (int) $id ] );
 
 	return true;
 }
 
 /* --- Метаданные ------------------------------------------------------- */
 function update_post_meta( $post_id, $key, $value ) {
-	$GLOBALS['wpd_test']['meta'][ (int) $post_id ][ $key ] = $value;
+	$GLOBALS['wpdc_test']['meta'][ (int) $post_id ][ $key ] = $value;
 
 	return true;
 }
@@ -199,47 +199,47 @@ function get_post_meta( $post_id, $key = '', $single = false ) {
 	$post_id = (int) $post_id;
 
 	if ( '' === $key ) {
-		return $GLOBALS['wpd_test']['meta'][ $post_id ] ?? array();
+		return $GLOBALS['wpdc_test']['meta'][ $post_id ] ?? array();
 	}
 
-	$exists = isset( $GLOBALS['wpd_test']['meta'][ $post_id ][ $key ] );
+	$exists = isset( $GLOBALS['wpdc_test']['meta'][ $post_id ][ $key ] );
 
 	if ( $single ) {
-		return $exists ? $GLOBALS['wpd_test']['meta'][ $post_id ][ $key ] : '';
+		return $exists ? $GLOBALS['wpdc_test']['meta'][ $post_id ][ $key ] : '';
 	}
 
-	return $exists ? array( $GLOBALS['wpd_test']['meta'][ $post_id ][ $key ] ) : array();
+	return $exists ? array( $GLOBALS['wpdc_test']['meta'][ $post_id ][ $key ] ) : array();
 }
 
 /* --- Опции ------------------------------------------------------------ */
 function get_option( $key, $default = false ) {
 	if ( 'date_format' === $key ) {
-		return $GLOBALS['wpd_test']['options'][ $key ] ?? 'd.m.Y';
+		return $GLOBALS['wpdc_test']['options'][ $key ] ?? 'd.m.Y';
 	}
 
-	return array_key_exists( $key, $GLOBALS['wpd_test']['options'] )
-		? $GLOBALS['wpd_test']['options'][ $key ]
+	return array_key_exists( $key, $GLOBALS['wpdc_test']['options'] )
+		? $GLOBALS['wpdc_test']['options'][ $key ]
 		: $default;
 }
 
 function update_option( $key, $value, $autoload = null ) {
-	$GLOBALS['wpd_test']['options'][ $key ] = $value;
+	$GLOBALS['wpdc_test']['options'][ $key ] = $value;
 
 	return true;
 }
 
 function delete_option( $key ) {
-	unset( $GLOBALS['wpd_test']['options'][ $key ] );
+	unset( $GLOBALS['wpdc_test']['options'][ $key ] );
 
 	return true;
 }
 
 function get_transient( $key ) {
-	return $GLOBALS['wpd_test']['options'][ '_transient_' . $key ] ?? false;
+	return $GLOBALS['wpdc_test']['options'][ '_transient_' . $key ] ?? false;
 }
 
 function set_transient( $key, $value, $expiration = 0 ) {
-	$GLOBALS['wpd_test']['options'][ '_transient_' . $key ] = $value;
+	$GLOBALS['wpdc_test']['options'][ '_transient_' . $key ] = $value;
 
 	return true;
 }
@@ -332,7 +332,7 @@ function get_bloginfo( $show = 'name' ) {
 
 function wp_upload_dir( $dir = null, $create = true ) {
 	return array(
-		'basedir' => $GLOBALS['wpd_test']['uploads'],
+		'basedir' => $GLOBALS['wpdc_test']['uploads'],
 		'baseurl' => 'http://example.test/uploads',
 	);
 }

@@ -8,7 +8,7 @@
 		/* --- Выбор фонового изображения --- */
 		var frame = null;
 
-		$('#wpd-background-select').on('click', function (event) {
+		$('#wpdc-background-select').on('click', function (event) {
 			event.preventDefault();
 
 			if (frame) {
@@ -26,13 +26,13 @@
 			frame.on('select', function () {
 				var attachment = frame.state().get('selection').first().toJSON();
 
-				$('#wpd_background_id').val(attachment.id);
+				$('#wpdc_background_id').val(attachment.id);
 
 				var url = attachment.sizes && attachment.sizes.medium
 					? attachment.sizes.medium.url
 					: attachment.url;
 
-				$('#wpd-background-preview').html(
+				$('#wpdc-background-preview').html(
 					$('<img>').attr({ src: url, alt: '' })
 				);
 			});
@@ -40,57 +40,57 @@
 			frame.open();
 		});
 
-		$('#wpd-background-remove').on('click', function (event) {
+		$('#wpdc-background-remove').on('click', function (event) {
 			event.preventDefault();
-			$('#wpd_background_id').val('');
-			$('#wpd-background-preview').empty();
+			$('#wpdc_background_id').val('');
+			$('#wpdc-background-preview').empty();
 		});
 
 		/* --- Поля бланка --- */
-		var body = $('#wpd-fields-body');
+		var body = $('#wpdc-fields-body');
 
 		function nextIndex() {
-			return body.find('.wpd-field-row').length === 0
+			return body.find('.wpdc-field-row').length === 0
 				? 0
-				: Math.max.apply(null, body.find('.wpd-field-row').map(function () {
+				: Math.max.apply(null, body.find('.wpdc-field-row').map(function () {
 					var match = $(this).find('input, textarea, select').first().attr('name').match(/\[(\d+)\]/);
 					return match ? parseInt(match[1], 10) : 0;
 				}).get()) + 1;
 		}
 
-		$('#wpd-add-field').on('click', function (event) {
+		$('#wpdc-add-field').on('click', function (event) {
 			event.preventDefault();
 
-			var template = $('#tmpl-wpd-field-row').html().replace(/__index__/g, nextIndex());
+			var template = $('#tmpl-wpdc-field-row').html().replace(/__index__/g, nextIndex());
 
 			body.append(template);
 		});
 
-		body.on('click', '.wpd-remove-field', function (event) {
+		body.on('click', '.wpdc-remove-field', function (event) {
 			event.preventDefault();
 
 			if (window.confirm(wpdAdmin.confirmDelete)) {
-				$(this).closest('.wpd-field-row').remove();
+				$(this).closest('.wpdc-field-row').remove();
 			}
 		});
 
 		/* --- Дополнительные поля сертификата --- */
-		$('#wpd-add-custom').on('click', function (event) {
+		$('#wpdc-add-custom').on('click', function (event) {
 			event.preventDefault();
 
-			var row = $('<p class="wpd-custom-row">'
-				+ '<input type="text" name="wpd_custom_key[]" class="wpd-custom-key" placeholder="group">'
-				+ '<input type="text" name="wpd_custom_value[]" class="regular-text" placeholder="значение">'
-				+ '<button type="button" class="button-link wpd-remove-custom">×</button>'
+			var row = $('<p class="wpdc-custom-row">'
+				+ '<input type="text" name="wpdc_custom_key[]" class="wpdc-custom-key" placeholder="group">'
+				+ '<input type="text" name="wpdc_custom_value[]" class="regular-text" placeholder="значение">'
+				+ '<button type="button" class="button-link wpdc-remove-custom">×</button>'
 				+ '</p>');
 
-			$('#wpd-custom-fields').append(row);
+			$('#wpdc-custom-fields').append(row);
 			row.find('input').first().trigger('focus');
 		});
 
-		$('#wpd-custom-fields').on('click', '.wpd-remove-custom', function (event) {
+		$('#wpdc-custom-fields').on('click', '.wpdc-remove-custom', function (event) {
 			event.preventDefault();
-			$(this).closest('.wpd-custom-row').remove();
+			$(this).closest('.wpdc-custom-row').remove();
 		});
 	});
 })(jQuery);

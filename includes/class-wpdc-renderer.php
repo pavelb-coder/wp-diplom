@@ -9,16 +9,16 @@
  * @package WP_Diplom
  */
 
-if ( ! defined( 'ABSPATH' ) && ! defined( 'WPD_PDF_STANDALONE' ) ) {
+if ( ! defined( 'ABSPATH' ) && ! defined( 'WPDC_PDF_STANDALONE' ) ) {
 	exit;
 }
 
-require_once __DIR__ . '/pdf/class-wpd-pdf-writer.php';
+require_once __DIR__ . '/pdf/class-wpdc-pdf-writer.php';
 
 /**
  * Сборка PDF сертификата.
  */
-class WPD_Renderer {
+class WPDC_Renderer {
 
 	/**
 	 * Размеры страниц в миллиметрах.
@@ -89,13 +89,13 @@ class WPD_Renderer {
 
 		list( $width_mm, $height_mm ) = self::page_size( $template['page'] );
 
-		$pdf = new WPD_PDF_Writer( $this->fonts() );
+		$pdf = new WPDC_PDF_Writer( $this->fonts() );
 
 		if ( ! $pdf->has_fonts() ) {
 			throw new RuntimeException( 'Не найдены файлы шрифтов в ' . $this->fonts_dir );
 		}
 
-		$mm = WPD_PDF_Writer::MM_TO_PT;
+		$mm = WPDC_PDF_Writer::MM_TO_PT;
 
 		$pdf->set_meta(
 			array(

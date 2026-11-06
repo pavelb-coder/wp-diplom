@@ -10,14 +10,14 @@
  * @package WP_Diplom
  */
 
-if ( ! defined( 'ABSPATH' ) && ! defined( 'WPD_PDF_STANDALONE' ) ) {
+if ( ! defined( 'ABSPATH' ) && ! defined( 'WPDC_PDF_STANDALONE' ) ) {
 	exit;
 }
 
 /**
  * Один TrueType-шрифт.
  */
-class WPD_PDF_Font {
+class WPDC_PDF_Font {
 
 	/**
 	 * Имя шрифта в PDF (PostScript-подобное).

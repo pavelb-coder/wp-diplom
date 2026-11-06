@@ -4,13 +4,18 @@ Tags: certificates, diploma, pdf, awards, education
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Автоматическая генерация сертификатов, грамот и дипломов в PDF: визуальные бланки, массовая выгрузка из CSV, отправка на e-mail и проверка подлинности по коду.
 
 == Description ==
+
+= Совместимость =
+
+Плагин использует собственное пространство имён WPDC/wpdc (классы, константы, опции, мета-ключи, типы записей). Конфликтов с плагином WP Olympiad Design (pavelb-coder/wp-design), который занимает префикс WPD/wpd, нет.
+
 
 Плагин создаёт PDF-сертификаты по настраиваемым бланкам. Внешние библиотеки не требуются: PDF-движок написан на чистом PHP и поддерживает кириллицу через встроенные шрифты DejaVu.
 
@@ -31,13 +36,13 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 **Проверка подлинности**
 
-Каждый сертификат получает код из 12 символов. Шорткод `[wpd_verify]` выводит форму проверки, а `/certificate/{код}/` отдаёт PDF. Сертификат можно отозвать — тогда проверка вернёт соответствующий статус.
+Каждый сертификат получает код из 12 символов. Шорткод `[wpdc_verify]` выводит форму проверки, а `/certificate/{код}/` отдаёт PDF. Сертификат можно отозвать — тогда проверка вернёт соответствующий статус.
 
 **Шорткоды**
 
-* `[wpd_verify]` — форма проверки по коду.
-* `[wpd_certificate id="123"]` — карточка сертификата.
-* `[wpd_certificate code="a1b2c3d4e5f6"]` — карточка по коду.
+* `[wpdc_verify]` — форма проверки по коду.
+* `[wpdc_certificate id="123"]` — карточка сертификата.
+* `[wpdc_certificate code="a1b2c3d4e5f6"]` — карточка по коду.
 
 == Installation ==
 
@@ -62,11 +67,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 = Где хранятся файлы? =
 
-В `wp-content/uploads/wpd-certificates/`. Каталог закрыт от листинга, файлы пересобираются при изменении сертификата.
+В `wp-content/uploads/wpdc-certificates/`. Каталог закрыт от листинга, файлы пересобираются при изменении сертификата.
 
 = Можно ли удалить все данные при удалении плагина? =
 
-Да, добавьте в `wp-config.php` строку `define( 'WPD_REMOVE_ALL_DATA', true );` — тогда будут удалены записи, метаданные и PDF.
+Да, добавьте в `wp-config.php` строку `define( 'WPDC_REMOVE_ALL_DATA', true );` — тогда будут удалены записи, метаданные и PDF.
 
 == Screenshots ==
 

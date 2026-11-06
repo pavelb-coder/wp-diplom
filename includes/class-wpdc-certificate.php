@@ -10,9 +10,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Работа с записями типа wpd_certificate.
+ * Работа с записями типа wpdc_certificate.
  */
-class WPD_Certificate {
+class WPDC_Certificate {
 
 	/**
 	 * Конфигурация бланка для рендерера.
@@ -23,7 +23,7 @@ class WPD_Certificate {
 	public static function template_config( $template_id ) {
 		$template_id = absint( $template_id );
 
-		$background_id = $template_id ? absint( get_post_meta( $template_id, '_wpd_background_id', true ) ) : 0;
+		$background_id = $template_id ? absint( get_post_meta( $template_id, '_wpdc_background_id', true ) ) : 0;
 		$background    = '';
 
 		if ( $background_id ) {
@@ -34,7 +34,7 @@ class WPD_Certificate {
 			}
 		}
 
-		$border = $template_id ? get_post_meta( $template_id, '_wpd_border', true ) : array();
+		$border = $template_id ? get_post_meta( $template_id, '_wpdc_border', true ) : array();
 
 		if ( ! is_array( $border ) || empty( $border ) ) {
 			$border = array(
@@ -52,22 +52,22 @@ class WPD_Certificate {
 			}
 		}
 
-		$fields = $template_id ? get_post_meta( $template_id, '_wpd_fields', true ) : array();
+		$fields = $template_id ? get_post_meta( $template_id, '_wpdc_fields', true ) : array();
 
 		if ( ! is_array( $fields ) || empty( $fields ) ) {
-			$fields = WPD_Renderer::default_fields();
+			$fields = WPDC_Renderer::default_fields();
 		}
 
-		$settings = WPD_Plugin::settings();
+		$settings = WPDC_Plugin::settings();
 
 		return array(
-			'page'             => (string) ( $template_id ? get_post_meta( $template_id, '_wpd_page', true ) : 'a4_landscape' ),
+			'page'             => (string) ( $template_id ? get_post_meta( $template_id, '_wpdc_page', true ) : 'a4_landscape' ),
 			'background'       => $background,
-			'background_color' => (string) ( $template_id ? get_post_meta( $template_id, '_wpd_background_color', true ) : '#ffffff' ),
-			'background_fit'   => (string) ( $template_id ? get_post_meta( $template_id, '_wpd_background_fit', true ) : 'cover' ),
-			'organization'     => (string) ( $template_id ? get_post_meta( $template_id, '_wpd_organization', true ) : '' )
+			'background_color' => (string) ( $template_id ? get_post_meta( $template_id, '_wpdc_background_color', true ) : '#ffffff' ),
+			'background_fit'   => (string) ( $template_id ? get_post_meta( $template_id, '_wpdc_background_fit', true ) : 'cover' ),
+			'organization'     => (string) ( $template_id ? get_post_meta( $template_id, '_wpdc_organization', true ) : '' )
 				?: (string) $settings['organization'],
-			'document_title'   => (string) ( $template_id ? get_post_meta( $template_id, '_wpd_document_title', true ) : '' )
+			'document_title'   => (string) ( $template_id ? get_post_meta( $template_id, '_wpdc_document_title', true ) : '' )
 				?: __( 'Сертификат', 'wp-diplom' ),
 			'border'           => $border,
 			'fields'           => $fields,
@@ -82,20 +82,20 @@ class WPD_Certificate {
 	 */
 	public static function data( $post_id ) {
 		$post_id = absint( $post_id );
-		$code    = (string) get_post_meta( $post_id, '_wpd_code', true );
-		$date    = (string) get_post_meta( $post_id, '_wpd_date', true );
+		$code    = (string) get_post_meta( $post_id, '_wpdc_code', true );
+		$date    = (string) get_post_meta( $post_id, '_wpdc_date', true );
 
-		$custom = get_post_meta( $post_id, '_wpd_custom', true );
+		$custom = get_post_meta( $post_id, '_wpdc_custom', true );
 
 		return array(
-			'recipient_name'  => (string) get_post_meta( $post_id, '_wpd_recipient', true ),
-			'recipient_email' => (string) get_post_meta( $post_id, '_wpd_email', true ),
-			'course_title'    => (string) get_post_meta( $post_id, '_wpd_course', true ),
-			'course_hours'    => (string) get_post_meta( $post_id, '_wpd_hours', true ),
-			'teacher'         => (string) get_post_meta( $post_id, '_wpd_teacher', true ),
+			'recipient_name'  => (string) get_post_meta( $post_id, '_wpdc_recipient', true ),
+			'recipient_email' => (string) get_post_meta( $post_id, '_wpdc_email', true ),
+			'course_title'    => (string) get_post_meta( $post_id, '_wpdc_course', true ),
+			'course_hours'    => (string) get_post_meta( $post_id, '_wpdc_hours', true ),
+			'teacher'         => (string) get_post_meta( $post_id, '_wpdc_teacher', true ),
 			'date'            => self::format_date( $date ),
-			'number'          => (string) get_post_meta( $post_id, '_wpd_number', true ),
-			'organization'    => (string) WPD_Plugin::settings( 'organization' ),
+			'number'          => (string) get_post_meta( $post_id, '_wpdc_number', true ),
+			'organization'    => (string) WPDC_Plugin::settings( 'organization' ),
 			'site_name'       => (string) get_bloginfo( 'name' ),
 			'code'            => $code,
 			'custom'          => is_array( $custom ) ? $custom : array(),
@@ -124,11 +124,11 @@ class WPD_Certificate {
 	 * @return string
 	 */
 	public static function next_number() {
-		$settings = WPD_Plugin::settings();
+		$settings = WPDC_Plugin::settings();
 		$prefix   = sanitize_text_field( (string) $settings['number_prefix'] );
 		$padding  = max( 1, min( 10, (int) $settings['number_padding'] ) );
 		$year     = (int) current_time( 'Y' );
-		$option   = 'wpd_number_counter_' . $year;
+		$option   = 'wpdc_number_counter_' . $year;
 
 		$counter = (int) get_option( $option, 0 ) + 1;
 
@@ -160,10 +160,10 @@ class WPD_Certificate {
 		$recipient = trim( (string) ( $args['recipient'] ?? '' ) );
 
 		if ( '' === $recipient ) {
-			return new WP_Error( 'wpd_no_recipient', __( 'Не указано имя получателя.', 'wp-diplom' ) );
+			return new WP_Error( 'wpdc_no_recipient', __( 'Не указано имя получателя.', 'wp-diplom' ) );
 		}
 
-		$settings    = WPD_Plugin::settings();
+		$settings    = WPDC_Plugin::settings();
 		$template_id = absint( $args['template_id'] ?? $settings['default_template'] );
 
 		if ( ! $template_id ) {
@@ -179,7 +179,7 @@ class WPD_Certificate {
 
 		$post_id = wp_insert_post(
 			array(
-				'post_type'   => 'wpd_certificate',
+				'post_type'   => 'wpdc_certificate',
 				'post_status' => 'publish',
 				'post_title'  => $recipient,
 			),
@@ -202,17 +202,17 @@ class WPD_Certificate {
 			}
 		}
 
-		update_post_meta( $post_id, '_wpd_recipient', $recipient );
-		update_post_meta( $post_id, '_wpd_email', sanitize_email( (string) ( $args['email'] ?? '' ) ) );
-		update_post_meta( $post_id, '_wpd_course', sanitize_text_field( (string) ( $args['course'] ?? '' ) ) );
-		update_post_meta( $post_id, '_wpd_hours', sanitize_text_field( (string) ( $args['hours'] ?? '' ) ) );
-		update_post_meta( $post_id, '_wpd_teacher', sanitize_text_field( (string) ( $args['teacher'] ?? '' ) ) );
-		update_post_meta( $post_id, '_wpd_date', sanitize_text_field( $date ) );
-		update_post_meta( $post_id, '_wpd_number', sanitize_text_field( $number ) );
-		update_post_meta( $post_id, '_wpd_template', $template_id );
-		update_post_meta( $post_id, '_wpd_code', self::generate_code() );
-		update_post_meta( $post_id, '_wpd_custom', $custom );
-		update_post_meta( $post_id, '_wpd_revoked', 0 );
+		update_post_meta( $post_id, '_wpdc_recipient', $recipient );
+		update_post_meta( $post_id, '_wpdc_email', sanitize_email( (string) ( $args['email'] ?? '' ) ) );
+		update_post_meta( $post_id, '_wpdc_course', sanitize_text_field( (string) ( $args['course'] ?? '' ) ) );
+		update_post_meta( $post_id, '_wpdc_hours', sanitize_text_field( (string) ( $args['hours'] ?? '' ) ) );
+		update_post_meta( $post_id, '_wpdc_teacher', sanitize_text_field( (string) ( $args['teacher'] ?? '' ) ) );
+		update_post_meta( $post_id, '_wpdc_date', sanitize_text_field( $date ) );
+		update_post_meta( $post_id, '_wpdc_number', sanitize_text_field( $number ) );
+		update_post_meta( $post_id, '_wpdc_template', $template_id );
+		update_post_meta( $post_id, '_wpdc_code', self::generate_code() );
+		update_post_meta( $post_id, '_wpdc_custom', $custom );
+		update_post_meta( $post_id, '_wpdc_revoked', 0 );
 
 		return $post_id;
 	}
@@ -225,7 +225,7 @@ class WPD_Certificate {
 	public static function first_template_id() {
 		$ids = get_posts(
 			array(
-				'post_type'      => 'wpd_template',
+				'post_type'      => 'wpdc_template',
 				'posts_per_page' => 1,
 				'post_status'    => 'publish',
 				'fields'         => 'ids',
@@ -248,41 +248,41 @@ class WPD_Certificate {
 		$post_id = absint( $post_id );
 		$post    = get_post( $post_id );
 
-		if ( ! $post || 'wpd_certificate' !== $post->post_type ) {
-			return new WP_Error( 'wpd_not_found', __( 'Сертификат не найден.', 'wp-diplom' ) );
+		if ( ! $post || 'wpdc_certificate' !== $post->post_type ) {
+			return new WP_Error( 'wpdc_not_found', __( 'Сертификат не найден.', 'wp-diplom' ) );
 		}
 
-		$code = (string) get_post_meta( $post_id, '_wpd_code', true );
+		$code = (string) get_post_meta( $post_id, '_wpdc_code', true );
 
 		if ( '' === $code ) {
 			$code = self::generate_code();
-			update_post_meta( $post_id, '_wpd_code', $code );
+			update_post_meta( $post_id, '_wpdc_code', $code );
 		}
 
-		$path = WPD_Plugin::storage_dir() . $code . '.pdf';
+		$path = WPDC_Plugin::storage_dir() . $code . '.pdf';
 
 		if ( ! $force && file_exists( $path ) && filesize( $path ) > 0 ) {
 			return $path;
 		}
 
-		$template_id = absint( get_post_meta( $post_id, '_wpd_template', true ) );
+		$template_id = absint( get_post_meta( $post_id, '_wpdc_template', true ) );
 		$template    = self::template_config( $template_id );
 		$data        = self::data( $post_id );
 
 		try {
-			$renderer = new WPD_Renderer();
+			$renderer = new WPDC_Renderer();
 			$binary   = $renderer->render( $template, $data );
 		} catch ( Exception $e ) {
-			return new WP_Error( 'wpd_render_failed', $e->getMessage() );
+			return new WP_Error( 'wpdc_render_failed', $e->getMessage() );
 		} catch ( Error $e ) {
-			return new WP_Error( 'wpd_render_failed', $e->getMessage() );
+			return new WP_Error( 'wpdc_render_failed', $e->getMessage() );
 		}
 
 		if ( false === file_put_contents( $path, $binary ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-			return new WP_Error( 'wpd_write_failed', __( 'Не удалось записать PDF. Проверьте права на каталог uploads.', 'wp-diplom' ) );
+			return new WP_Error( 'wpdc_write_failed', __( 'Не удалось записать PDF. Проверьте права на каталог uploads.', 'wp-diplom' ) );
 		}
 
-		update_post_meta( $post_id, '_wpd_pdf_generated', current_time( 'mysql' ) );
+		update_post_meta( $post_id, '_wpdc_pdf_generated', current_time( 'mysql' ) );
 
 		return $path;
 	}
@@ -293,13 +293,13 @@ class WPD_Certificate {
 	 * @param int $post_id id сертификата.
 	 */
 	public static function delete_pdf( $post_id ) {
-		$code = (string) get_post_meta( absint( $post_id ), '_wpd_code', true );
+		$code = (string) get_post_meta( absint( $post_id ), '_wpdc_code', true );
 
 		if ( '' === $code ) {
 			return;
 		}
 
-		$path = WPD_Plugin::storage_dir() . $code . '.pdf';
+		$path = WPDC_Plugin::storage_dir() . $code . '.pdf';
 
 		if ( file_exists( $path ) ) {
 			wp_delete_file( $path );
@@ -321,10 +321,10 @@ class WPD_Certificate {
 
 		$posts = get_posts(
 			array(
-				'post_type'      => 'wpd_certificate',
+				'post_type'      => 'wpdc_certificate',
 				'posts_per_page' => 1,
 				'post_status'    => 'publish',
-				'meta_key'       => '_wpd_code', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				'meta_key'       => '_wpdc_code', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
 				'meta_value'     => strtolower( $code ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
 			)
 		);
@@ -339,11 +339,11 @@ class WPD_Certificate {
 	 * @return string
 	 */
 	public static function verify_url( $code ) {
-		$settings = WPD_Plugin::settings();
+		$settings = WPDC_Plugin::settings();
 		$page_id  = absint( $settings['verify_page'] ?? 0 );
 
 		if ( $page_id ) {
-			return add_query_arg( 'wpd_code', $code, get_permalink( $page_id ) );
+			return add_query_arg( 'wpdc_code', $code, get_permalink( $page_id ) );
 		}
 
 		return home_url( '/certificate/' . $code . '/' );
@@ -359,12 +359,12 @@ class WPD_Certificate {
 		return wp_nonce_url(
 			add_query_arg(
 				array(
-					'action' => 'wpd_download',
+					'action' => 'wpdc_download',
 					'id'     => absint( $post_id ),
 				),
 				admin_url( 'admin-post.php' )
 			),
-			'wpd_download_' . absint( $post_id )
+			'wpdc_download_' . absint( $post_id )
 			
 		);
 	}
@@ -376,6 +376,6 @@ class WPD_Certificate {
 	 * @return string Дата отправки или пустая строка.
 	 */
 	public static function sent_at( $post_id ) {
-		return (string) get_post_meta( absint( $post_id ), '_wpd_sent_at', true );
+		return (string) get_post_meta( absint( $post_id ), '_wpdc_sent_at', true );
 	}
 }
