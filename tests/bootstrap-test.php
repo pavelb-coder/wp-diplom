@@ -76,7 +76,16 @@ function check( $condition, $label ) {
 require_once WPD_TEST_ROOT . 'wp-diplom.php';
 
 check( defined( 'WPD_VERSION' ), 'константа WPD_VERSION определена' );
-check( '1.0.0' === WPD_VERSION, 'версия прочитана из заголовка: ' . ( defined( 'WPD_VERSION' ) ? WPD_VERSION : '—' ) );
+$header_version = '';
+
+if ( preg_match( '/^[ \t\/*#@]*Version:(.*)$/mi', (string) file_get_contents( WPD_TEST_ROOT . 'wp-diplom.php' ), $m ) ) {
+	$header_version = trim( $m[1] );
+}
+
+check(
+	defined( 'WPD_VERSION' ) && $header_version === WPD_VERSION,
+	'версия совпадает с заголовком (' . ( $header_version ? $header_version : '—' ) . '): ' . ( defined( 'WPD_VERSION' ) ? WPD_VERSION : '—' )
+);
 check( (bool) preg_match( '/^\d+\.\d+\.\d+$/', WPD_VERSION ), 'версия в формате x.y.z' );
 
 // Классы подключаются конструктором плагина.

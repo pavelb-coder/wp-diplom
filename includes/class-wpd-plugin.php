@@ -153,9 +153,37 @@ final class WPD_Plugin {
 	}
 
 	/**
-	 * Активация: создаём бланк по умолчанию и правила перезаписи.
+	 * Активация.
+	 *
+	 * Работа вынесена в отдельный метод и обёрнута в try/catch: если на сайте
+	 * что-то пойдёт не так (нехватка памяти, отсутствующее расширение,
+	 * нестандартный хостинг), WordPress не покажет «фатальную ошибку» и не
+	 * откажется включать плагин — вместо этого текст ошибки попадёт в админку.
 	 */
 	public static function activate() {
+		delete_option( 'wpd_activation_error' );
+
+		try {
+			self::do_activate();
+		} catch ( Throwable $e ) {
+			update_option(
+				'wpd_activation_error',
+				array(
+					'message' => $e->getMessage(),
+					'file'    => $e->getFile(),
+					'line'    => $e->getLine(),
+					'php'     => PHP_VERSION,
+					'time'    => time(),
+				),
+				false
+			);
+		}
+	}
+
+	/**
+	 * Непосредственно активация: бланк по умолчанию и правила перезаписи.
+	 */
+	private static function do_activate() {
 		require_once WPD_DIR . 'includes/class-wpd-post-types.php';
 		require_once WPD_DIR . 'includes/class-wpd-renderer.php';
 

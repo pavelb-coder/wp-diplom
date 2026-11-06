@@ -19,6 +19,7 @@ class WPD_Admin {
 	 */
 	public function hooks() {
 		add_action( 'admin_menu', array( $this, 'menu' ) );
+		add_action( 'admin_notices', array( $this, 'activation_notice' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
 		add_action( 'add_meta_boxes', array( $this, 'meta_boxes' ) );
 		add_action( 'save_post_wpd_template', array( $this, 'save_template' ), 10, 2 );
@@ -41,6 +42,37 @@ class WPD_Admin {
 	/* --------------------------------------------------------------------- */
 	/* Меню и материалы                                                       */
 	/* --------------------------------------------------------------------- */
+
+	/**
+	 * Сообщение о неполадке при активации.
+	 *
+	 * Плагин перехватывает ошибку активации и складывает её в опцию — так сайт
+	 * не падает, а администратор видит точное место проблемы.
+	 */
+	public function activation_notice() {
+		$error = get_option( 'wpd_activation_error' );
+
+		if ( ! is_array( $error ) || empty( $error['message'] ) || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$file = isset( $error['file'] ) ? str_replace( ABSPATH, '', (string) $error['file'] ) : '';
+
+		echo '<div class="notice notice-error"><p><strong>';
+		echo esc_html__( 'WP Diplom: при активации произошла ошибка, плагин включён, но часть настроек могла не создаться.', 'wp-diplom' );
+		echo '</strong></p><p><code>';
+		echo esc_html( $error['message'] );
+		echo '</code></p>';
+
+		if ( '' !== $file ) {
+			echo '<p>';
+			echo esc_html__( 'Файл:', 'wp-diplom' ) . ' <code>' . esc_html( $file );
+			echo isset( $error['line'] ) ? ':' . (int) $error['line'] : '';
+			echo '</code> — PHP <code>' . esc_html( isset( $error['php'] ) ? (string) $error['php'] : PHP_VERSION ) . '</code></p>';
+		}
+
+		echo '<p>' . esc_html__( 'Пришлите этот текст разработчику — по нему видно точную причину.', 'wp-diplom' ) . '</p></div>';
+	}
 
 	/**
 	 * Подменю.
