@@ -54,8 +54,18 @@ $render_row = static function ( $field, $index ) {
 		</td>
 
 		<td>
-			<textarea class="widefat" rows="2" name="<?php echo esc_attr( $name ); ?>[text]"
-				placeholder="<?php esc_attr_e( 'Текст или {recipient_name}', 'wp-diplom' ); ?>"><?php echo esc_textarea( $field['text'] ); ?></textarea>
+			<?php if ( class_exists( 'WPDC_Texts' ) && WPDC_Texts::is_slot( $field['id'] ) ) : ?>
+				<?php // Стандартная фраза: текст правится в блоке «Тексты бланка», здесь — только положение. ?>
+				<input type="hidden" name="<?php echo esc_attr( $name ); ?>[text]"
+					value="<?php echo esc_attr( $field['text'] ); ?>">
+				<span class="wpdc-field-text-preview"><?php echo esc_html( $field['text'] ); ?></span>
+				<p class="description">
+					<?php esc_html_e( 'Текст задаётся в блоке «Тексты бланка».', 'wp-diplom' ); ?>
+				</p>
+			<?php else : ?>
+				<textarea class="widefat" rows="2" name="<?php echo esc_attr( $name ); ?>[text]"
+					placeholder="<?php esc_attr_e( 'Текст или {recipient_name}', 'wp-diplom' ); ?>"><?php echo esc_textarea( $field['text'] ); ?></textarea>
+			<?php endif; ?>
 		</td>
 
 		<td><input type="number" step="0.5" class="wpdc-num" name="<?php echo esc_attr( $name ); ?>[x]" value="<?php echo esc_attr( $field['x'] ); ?>"></td>
@@ -144,7 +154,7 @@ $render_row = static function ( $field, $index ) {
 				<tr>
 					<td colspan="14">
 						<button type="button" class="button" id="wpdc-add-field">
-							<?php esc_html_e( '+ Добавить поле', 'wp-diplom' ); ?>
+							<?php esc_html_e( '+ Добавить свой блок', 'wp-diplom' ); ?>
 						</button>
 					</td>
 				</tr>

@@ -87,6 +87,9 @@ class WPDC_Certificate {
 				?: __( 'Сертификат', 'wp-diplom' ),
 			'border'           => $border,
 			'fields'           => $fields,
+			'texts'            => $template_id && is_array( get_post_meta( $template_id, '_wpdc_texts', true ) )
+				? (array) get_post_meta( $template_id, '_wpdc_texts', true )
+				: array(),
 		);
 	}
 

@@ -96,6 +96,19 @@
 			}
 		});
 
+		/* --- Готовые варианты текстов --- */
+		$('.wpdc-preset-select').on('change', function () {
+			var value = $(this).val();
+			var target = $('#' + $(this).data('target'));
+
+			if (!value || !target.length) {
+				return;
+			}
+
+			target.val(value).trigger('change');
+			$(this).val('');
+		});
+
 		/* --- Поля бланка --- */
 		var body = $('#wpdc-fields-body');
 

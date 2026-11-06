@@ -52,6 +52,7 @@ final class WPDC_Plugin {
 	 * Подключение файлов.
 	 */
 	private function load_files() {
+		require_once WPDC_DIR . 'includes/class-wpdc-texts.php';
 		require_once WPDC_DIR . 'includes/class-wpdc-post-types.php';
 		require_once WPDC_DIR . 'includes/class-wpdc-renderer.php';
 		require_once WPDC_DIR . 'includes/class-wpdc-certificate.php';
@@ -78,6 +79,7 @@ final class WPDC_Plugin {
 		}
 
 		add_action( 'init', array( $this, 'register_rewrite' ) );
+		add_action( 'init', array( __CLASS__, 'migrate_field_texts' ), 20 );
 		add_filter( 'plugin_action_links_' . WPDC_BASENAME, array( $this, 'action_links' ) );
 	}
 
@@ -89,6 +91,65 @@ final class WPDC_Plugin {
 	 */
 	public function component( $name ) {
 		return $this->components[ $name ] ?? null;
+	}
+
+	/**
+	 * Однократный перенос текстов полей в переопределения бланка.
+	 *
+	 * До 1.3.0 фраза хранилась прямо в поле бланка. Теперь стандартные фразы
+	 * живут в «Текстах», а поле хранит только положение. Чтобы настроенные
+	 * вручную бланки не потеряли свой текст, отличающиеся значения
+	 * переносятся в `_wpdc_texts` — как явное переопределение.
+	 */
+	public static function migrate_field_texts() {
+		if ( get_option( 'wpdc_texts_migrated' ) ) {
+			return;
+		}
+
+		if ( ! class_exists( 'WPDC_Texts' ) ) {
+			require_once WPDC_DIR . 'includes/class-wpdc-texts.php';
+		}
+
+		$defaults  = WPDC_Texts::defaults();
+		$templates = get_posts(
+			array(
+				'post_type'      => 'wpdc_template',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		);
+
+		foreach ( $templates as $template_id ) {
+			$fields = get_post_meta( $template_id, '_wpdc_fields', true );
+
+			if ( ! is_array( $fields ) ) {
+				continue;
+			}
+
+			$raw_texts = get_post_meta( $template_id, '_wpdc_texts', true );
+			$overrides = is_array( $raw_texts ) ? $raw_texts : array();
+
+			foreach ( $fields as $field ) {
+				$slot = isset( $field['id'] ) ? (string) $field['id'] : '';
+
+				if ( ! WPDC_Texts::is_slot( $slot ) || isset( $overrides[ $slot ] ) ) {
+					continue;
+				}
+
+				$text = isset( $field['text'] ) ? (string) $field['text'] : '';
+
+				if ( '' !== trim( $text ) && $text !== $defaults[ $slot ] ) {
+					$overrides[ $slot ] = $text;
+				}
+			}
+
+			if ( $overrides ) {
+				update_post_meta( $template_id, '_wpdc_texts', $overrides );
+			}
+		}
+
+		update_option( 'wpdc_texts_migrated', 1, false );
 	}
 
 	/**
@@ -184,6 +245,7 @@ final class WPDC_Plugin {
 	 * Непосредственно активация: бланк по умолчанию и правила перезаписи.
 	 */
 	private static function do_activate() {
+		require_once WPDC_DIR . 'includes/class-wpdc-texts.php';
 		require_once WPDC_DIR . 'includes/class-wpdc-post-types.php';
 		require_once WPDC_DIR . 'includes/class-wpdc-renderer.php';
 

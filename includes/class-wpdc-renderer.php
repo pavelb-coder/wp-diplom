@@ -247,6 +247,7 @@ class WPDC_Renderer {
 				'document_title'    => 'Сертификат',
 				'border'            => array(),
 				'fields'            => array(),
+				'texts'             => array(),
 			),
 			$template
 		);
@@ -272,10 +273,19 @@ class WPDC_Renderer {
 			$template['background_fit'] = 'cover';
 		}
 
+		// Явно заданные тексты (настройки или переопределение бланка) заменяют
+		// текст стандартного поля. Поля с нестандартным id не трогаем.
+		$explicit = array();
+
+		if ( class_exists( 'WPDC_Texts' ) ) {
+			$override = isset( $template['texts'] ) && is_array( $template['texts'] ) ? $template['texts'] : array();
+			$explicit = WPDC_Texts::resolve( $override );
+		}
+
 		$fields = array();
 
 		foreach ( (array) $template['fields'] as $field ) {
-			$fields[] = array_merge(
+			$merged = array_merge(
 				array(
 					'id'          => '',
 					'text'        => '',
@@ -295,6 +305,14 @@ class WPDC_Renderer {
 				),
 				(array) $field
 			);
+
+			$slot = (string) $merged['id'];
+
+			if ( '' !== $slot && isset( $explicit[ $slot ] ) ) {
+				$merged['text'] = $explicit[ $slot ];
+			}
+
+			$fields[] = $merged;
 		}
 
 		$template['fields'] = $fields;

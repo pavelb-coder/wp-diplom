@@ -159,6 +159,15 @@ class WPDC_Admin {
 		);
 
 		add_meta_box(
+			'wpdc_template_texts',
+			__( 'Тексты бланка', 'wp-diplom' ),
+			array( $this, 'render_template_texts_box' ),
+			'wpdc_template',
+			'normal',
+			'high'
+		);
+
+		add_meta_box(
 			'wpdc_template_fields',
 			__( 'Поля бланка', 'wp-diplom' ),
 			array( $this, 'render_template_fields_box' ),
@@ -228,6 +237,39 @@ class WPDC_Admin {
 	 *
 	 * @param WP_Post $post Запись.
 	 */
+	public function render_template_texts_box( $post ) {
+		wp_nonce_field( 'wpdc_save_template', 'wpdc_template_nonce_texts' );
+
+		$stored    = get_post_meta( $post->ID, '_wpdc_texts', true );
+		$overrides = is_array( $stored ) ? $stored : array();
+		$global    = WPDC_Texts::global_texts();
+		$defaults  = WPDC_Texts::defaults();
+
+		// Запасное значение — текст соответствующего поля бланка.
+		$fields = (array) get_post_meta( $post->ID, '_wpdc_fields', true );
+		$by_id  = array();
+
+		foreach ( $fields as $field ) {
+			if ( is_array( $field ) && isset( $field['id'] ) ) {
+				$by_id[ (string) $field['id'] ] = isset( $field['text'] ) ? (string) $field['text'] : '';
+			}
+		}
+
+		$slots = WPDC_Texts::SLOTS;
+		$values = array();
+
+		foreach ( array_keys( $slots ) as $slot ) {
+			$fallback        = $by_id[ $slot ] ?? $defaults[ $slot ];
+			$values[ $slot ] = WPDC_Texts::effective( $slot, $overrides, $fallback );
+		}
+
+		$presets      = WPDC_Texts::presets();
+		$placeholders = WPDC_Renderer::placeholders();
+		$settings_url = admin_url( 'edit.php?post_type=wpdc_certificate&page=wpdc-settings#wpdc-texts' );
+
+		include WPDC_DIR . 'admin/views/meta-template-texts.php';
+	}
+
 	public function render_template_fields_box( $post ) {
 		$fields = get_post_meta( $post->ID, '_wpdc_fields', true );
 
@@ -462,6 +504,17 @@ class WPDC_Admin {
 				'inset_y' => max( 0, min( 100, (float) ( $_POST['wpdc_border_inset_y'] ?? 12 ) ) ),
 			)
 		);
+
+		// Тексты бланка: пустое значение = «как в настройках».
+		if ( isset( $_POST['wpdc_text'] ) ) {
+			$texts = WPDC_Texts::sanitize( wp_unslash( $_POST['wpdc_text'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+			if ( $texts ) {
+				update_post_meta( $post_id, '_wpdc_texts', $texts );
+			} else {
+				delete_post_meta( $post_id, '_wpdc_texts' );
+			}
+		}
 
 		// Поля.
 		$fields = array();
@@ -949,6 +1002,7 @@ class WPDC_Admin {
 			'verify_page'      => absint( $_POST['wpdc_verify_page'] ?? 0 ),
 			'enable_verify'    => empty( $_POST['wpdc_enable_verify'] ) ? 0 : 1,
 			'sample_teacher'   => sanitize_text_field( wp_unslash( $_POST['wpdc_sample_teacher'] ?? '' ) ),
+			'texts'            => WPDC_Texts::sanitize( wp_unslash( $_POST['wpdc_text'] ?? array() ) ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		);
 
 		update_option( 'wpdc_settings', $settings );
@@ -986,6 +1040,7 @@ class WPDC_Admin {
 	 * Страница настроек.
 	 */
 	public function render_settings_page() {
+		require_once WPDC_DIR . 'includes/class-wpdc-texts.php';
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
 		}
