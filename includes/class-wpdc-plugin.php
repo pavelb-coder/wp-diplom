@@ -206,6 +206,14 @@ final class WPDC_Plugin {
 
 		$settings = array_merge( $defaults, $saved );
 
+		// Письмо настраивается не в интерфейсе, а встроенными значениями:
+		// пустые сохранённые строки не должны оставлять письмо без темы.
+		foreach ( array( 'email_subject', 'email_body', 'sender_name', 'sender_email' ) as $email_key ) {
+			if ( '' === trim( (string) $settings[ $email_key ] ) ) {
+				$settings[ $email_key ] = $defaults[ $email_key ];
+			}
+		}
+
 		if ( null === $key ) {
 			return $settings;
 		}

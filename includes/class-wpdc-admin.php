@@ -15,6 +15,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WPDC_Admin {
 
 	/**
+	 * Настройки письма, которые больше не редактируются в интерфейсе.
+	 *
+	 * @var string[]
+	 */
+	const EMAIL_KEYS = array( 'email_subject', 'email_body', 'sender_name', 'sender_email' );
+
+
+	/**
 	 * Хуки.
 	 */
 	public function hooks() {
@@ -872,15 +880,22 @@ class WPDC_Admin {
 			'default_template' => absint( $_POST['wpdc_default_template'] ?? 0 ),
 			'number_prefix'    => sanitize_text_field( wp_unslash( $_POST['wpdc_number_prefix'] ?? 'WPD' ) ),
 			'number_padding'   => max( 1, min( 10, absint( $_POST['wpdc_number_padding'] ?? 4 ) ) ),
-			'email_subject'    => sanitize_text_field( wp_unslash( $_POST['wpdc_email_subject'] ?? '' ) ),
-			'email_body'       => sanitize_textarea_field( wp_unslash( $_POST['wpdc_email_body'] ?? '' ) ),
-			'sender_name'      => sanitize_text_field( wp_unslash( $_POST['wpdc_sender_name'] ?? '' ) ),
-			'sender_email'     => sanitize_email( wp_unslash( $_POST['wpdc_sender_email'] ?? '' ) ),
 			'verify_page'      => absint( $_POST['wpdc_verify_page'] ?? 0 ),
 			'enable_verify'    => empty( $_POST['wpdc_enable_verify'] ) ? 0 : 1,
 			'sample_teacher'   => sanitize_text_field( wp_unslash( $_POST['wpdc_sample_teacher'] ?? '' ) ),
 			'texts'            => WPDC_Texts::sanitize( wp_unslash( $_POST['wpdc_text'] ?? array() ) ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		);
+
+		// Письмо больше не настраивается в интерфейсе, но уже сохранённые
+		// значения не затираем: они продолжают действовать.
+		$existing = get_option( 'wpdc_settings', array() );
+		$existing = is_array( $existing ) ? $existing : array();
+
+		foreach ( self::EMAIL_KEYS as $key ) {
+			if ( isset( $existing[ $key ] ) && '' !== trim( (string) $existing[ $key ] ) ) {
+				$settings[ $key ] = $existing[ $key ];
+			}
+		}
 
 		update_option( 'wpdc_settings', $settings );
 

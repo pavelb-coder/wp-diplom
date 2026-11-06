@@ -207,6 +207,21 @@ check( false === strpos( $admin_source, 'wpdc_bulk' ), 'хуки admin_post_wpdc
 check( false === strpos( $admin_source, 'ZipArchive' ), 'работа с ZIP удалена' );
 check( ! file_exists( WPDC_DIR . 'admin/views/page-bulk.php' ), 'страница массовой генерации удалена' );
 
+// --- Письмо: настраивается только встроенными значениями -----------------
+$settings_view = (string) file_get_contents( WPDC_DIR . 'admin/views/page-settings.php' );
+
+foreach ( array( 'wpdc_email_subject', 'wpdc_email_body', 'wpdc_sender_name', 'wpdc_sender_email' ) as $gone ) {
+	check( false === strpos( $settings_view, $gone ), 'в настройках нет поля ' . $gone );
+}
+
+check( false === strpos( $settings_view, 'Письмо с сертификатом' ), 'раздел «Письмо с сертификатом» удалён' );
+check( false !== strpos( $settings_view, 'wpdc_sample_teacher' ), 'поле «Преподаватель в предпросмотре» сохранено' );
+
+$defaults = WPDC_Plugin::settings();
+
+check( '' !== trim( (string) $defaults['email_subject'] ), 'тема письма по умолчанию не пуста' );
+check( '' !== trim( (string) $defaults['email_body'] ), 'текст письма по умолчанию не пуст' );
+
 // --- Письмо ------------------------------------------------------------
 $message = WPDC_Email::compose( $created );
 

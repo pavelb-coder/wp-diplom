@@ -121,6 +121,18 @@ $wpdc_placeholders  = WPDC_Renderer::placeholders(); // phpcs:ignore WordPress.S
 						</p>
 					</td>
 				</tr>
+
+				<tr>
+					<th scope="row">
+						<label for="wpdc_sample_teacher"><?php esc_html_e( 'Преподаватель в предпросмотре', 'wp-diplom' ); ?></label>
+					</th>
+					<td>
+						<input type="text" class="regular-text" name="wpdc_sample_teacher" id="wpdc_sample_teacher"
+							value="<?php echo esc_attr( $settings['sample_teacher'] ); ?>"
+							placeholder="<?php esc_attr_e( 'Иванов И. И.', 'wp-diplom' ); ?>">
+						<p class="description"><?php esc_html_e( 'Используется в предпросмотре бланка.', 'wp-diplom' ); ?></p>
+					</td>
+				</tr>
 			</tbody>
 		</table>
 
@@ -175,65 +187,6 @@ $wpdc_placeholders  = WPDC_Renderer::placeholders(); // phpcs:ignore WordPress.S
 								<code><?php echo esc_html( $wpdc_code ); ?></code>
 							<?php endforeach; ?>
 						</p>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-
-		<h2 class="title"><?php esc_html_e( 'Письмо с сертификатом', 'wp-diplom' ); ?></h2>
-
-		<table class="form-table" role="presentation">
-			<tbody>
-				<tr>
-					<th scope="row">
-						<label for="wpdc_sender_name"><?php esc_html_e( 'Имя отправителя', 'wp-diplom' ); ?></label>
-					</th>
-					<td>
-						<input type="text" class="regular-text" name="wpdc_sender_name" id="wpdc_sender_name"
-							value="<?php echo esc_attr( $settings['sender_name'] ); ?>">
-					</td>
-				</tr>
-
-				<tr>
-					<th scope="row">
-						<label for="wpdc_sender_email"><?php esc_html_e( 'E-mail отправителя', 'wp-diplom' ); ?></label>
-					</th>
-					<td>
-						<input type="email" class="regular-text" name="wpdc_sender_email" id="wpdc_sender_email"
-							value="<?php echo esc_attr( $settings['sender_email'] ); ?>">
-					</td>
-				</tr>
-
-				<tr>
-					<th scope="row">
-						<label for="wpdc_email_subject"><?php esc_html_e( 'Тема письма', 'wp-diplom' ); ?></label>
-					</th>
-					<td>
-						<input type="text" class="large-text" name="wpdc_email_subject" id="wpdc_email_subject"
-							value="<?php echo esc_attr( $settings['email_subject'] ); ?>">
-					</td>
-				</tr>
-
-				<tr>
-					<th scope="row">
-						<label for="wpdc_email_body"><?php esc_html_e( 'Текст письма', 'wp-diplom' ); ?></label>
-					</th>
-					<td>
-						<textarea name="wpdc_email_body" id="wpdc_email_body" rows="10" class="large-text code"><?php echo esc_textarea( $settings['email_body'] ); ?></textarea>
-						<p class="description">
-							<?php esc_html_e( 'Доступны плейсхолдеры бланка, а также {verify_url} и {site_url}. PDF прикрепляется автоматически.', 'wp-diplom' ); ?>
-						</p>
-					</td>
-				</tr>
-
-				<tr>
-					<th scope="row">
-						<label for="wpdc_sample_teacher"><?php esc_html_e( 'Преподаватель в предпросмотре', 'wp-diplom' ); ?></label>
-					</th>
-					<td>
-						<input type="text" class="regular-text" name="wpdc_sample_teacher" id="wpdc_sample_teacher"
-							value="<?php echo esc_attr( $settings['sample_teacher'] ); ?>"
-							placeholder="<?php esc_attr_e( 'Иванов И. И.', 'wp-diplom' ); ?>">
 					</td>
 				</tr>
 			</tbody>
