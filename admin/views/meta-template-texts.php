@@ -3,18 +3,17 @@
  * Метабокс: тексты бланка.
  *
  * Показывает стандартные фразы, которые подставляются в документ. Значение
- * берётся по цепочке: переопределение бланка → общие настройки → текст поля.
- * Пустое поле означает «как в настройках».
+ * берётся по цепочке: переопределение бланка → сохранённые общие тексты →
+ * текст поля → встроенное значение. Пустое поле означает «как по умолчанию».
  *
  * @package WP_Diplom
  *
  * @var array<string, string> $slots        Названия слотов.
  * @var array<string, string> $values       Действующие значения.
  * @var array<string, string> $overrides    Переопределения бланка.
- * @var array<string, string> $global       Значения из настроек.
+ * @var array<string, string> $global       Ранее сохранённые общие тексты.
  * @var array<string, array>  $presets      Готовые варианты.
  * @var array<string, string> $placeholders Плейсхолдеры.
- * @var string                $settings_url Ссылка на общие настройки.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,8 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <p class="description wpdc-texts-intro">
-	<?php esc_html_e( 'Эти фразы подставляются автоматически — и при предпросмотре, и при массовой генерации. Правьте здесь, если бланк должен отличаться от общих настроек. Пустое поле — «как в настройках».', 'wp-diplom' ); ?>
-	<a href="<?php echo esc_url( $settings_url ); ?>"><?php esc_html_e( 'Общие тексты', 'wp-diplom' ); ?></a>
+	<?php esc_html_e( 'Эти фразы подставляются в документ автоматически — и при предпросмотре, и при выдаче сертификата. Пустое поле означает «как по умолчанию»: действует текст поля бланка, а если его нет — встроенная фраза.', 'wp-diplom' ); ?>
 </p>
 
 <table class="form-table wpdc-form-table wpdc-texts-table" role="presentation">
@@ -57,7 +55,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 								<?php esc_html_e( 'Сейчас действует:', 'wp-diplom' ); ?>
 								<code><?php echo esc_html( $value ); ?></code>
 								<?php if ( '' !== $from_glob ) : ?>
-									(<?php esc_html_e( 'из настроек', 'wp-diplom' ); ?>)
+									(<?php esc_html_e( 'общие тексты, сохранённые ранее', 'wp-diplom' ); ?>)
 								<?php else : ?>
 									(<?php esc_html_e( 'по умолчанию', 'wp-diplom' ); ?>)
 								<?php endif; ?>

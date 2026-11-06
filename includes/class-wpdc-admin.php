@@ -288,7 +288,6 @@ class WPDC_Admin {
 
 		$presets      = WPDC_Texts::presets();
 		$placeholders = WPDC_Renderer::placeholders();
-		$settings_url = admin_url( 'edit.php?post_type=wpdc_certificate&page=wpdc-settings#wpdc-texts' );
 
 		include WPDC_DIR . 'admin/views/meta-template-texts.php';
 	}
@@ -883,7 +882,6 @@ class WPDC_Admin {
 			'verify_page'      => absint( $_POST['wpdc_verify_page'] ?? 0 ),
 			'enable_verify'    => empty( $_POST['wpdc_enable_verify'] ) ? 0 : 1,
 			'sample_teacher'   => sanitize_text_field( wp_unslash( $_POST['wpdc_sample_teacher'] ?? '' ) ),
-			'texts'            => WPDC_Texts::sanitize( wp_unslash( $_POST['wpdc_text'] ?? array() ) ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		);
 
 		// Письмо больше не настраивается в интерфейсе, но уже сохранённые
@@ -895,6 +893,12 @@ class WPDC_Admin {
 			if ( isset( $existing[ $key ] ) && '' !== trim( (string) $existing[ $key ] ) ) {
 				$settings[ $key ] = $existing[ $key ];
 			}
+		}
+
+		// Общие тексты сертификата в интерфейсе больше не редактируются,
+		// но сохранённые значения продолжают действовать.
+		if ( isset( $existing['texts'] ) && is_array( $existing['texts'] ) && $existing['texts'] ) {
+			$settings['texts'] = WPDC_Texts::sanitize( $existing['texts'] );
 		}
 
 		update_option( 'wpdc_settings', $settings );
@@ -919,7 +923,6 @@ class WPDC_Admin {
 	 * Страница настроек.
 	 */
 	public function render_settings_page() {
-		require_once WPDC_DIR . 'includes/class-wpdc-texts.php';
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
 		}

@@ -15,11 +15,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 $wpdc_notice = isset( $_GET['wpdc_notice'] ) ? sanitize_key( wp_unslash( $_GET['wpdc_notice'] ) ) : '';
 
-$wpdc_text_slots    = WPDC_Texts::SLOTS;
-$wpdc_text_defaults = WPDC_Texts::defaults();
-$wpdc_text_presets  = WPDC_Texts::presets();
-$wpdc_text_global   = WPDC_Texts::global_texts();
-$wpdc_placeholders  = WPDC_Renderer::placeholders(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 ?>
 <div class="wrap wpdc-wrap">
 	<h1><?php esc_html_e( 'Настройки сертификатов', 'wp-diplom' ); ?></h1>
@@ -131,62 +126,6 @@ $wpdc_placeholders  = WPDC_Renderer::placeholders(); // phpcs:ignore WordPress.S
 							value="<?php echo esc_attr( $settings['sample_teacher'] ); ?>"
 							placeholder="<?php esc_attr_e( 'Иванов И. И.', 'wp-diplom' ); ?>">
 						<p class="description"><?php esc_html_e( 'Используется в предпросмотре бланка.', 'wp-diplom' ); ?></p>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-
-		<h2 class="title" id="wpdc-texts"><?php esc_html_e( 'Тексты сертификата', 'wp-diplom' ); ?></h2>
-
-		<p class="description">
-			<?php esc_html_e( 'Фразы, которые подставляются в бланк автоматически. Действуют для всех бланков; в самом бланке любую фразу можно переопределить. Пустое поле — встроенный текст по умолчанию.', 'wp-diplom' ); ?>
-		</p>
-
-		<table class="form-table wpdc-form-table" role="presentation">
-			<tbody>
-				<?php foreach ( $wpdc_text_slots as $wpdc_slot => $wpdc_label ) : ?>
-					<?php
-					$wpdc_value    = isset( $wpdc_text_global[ $wpdc_slot ] ) ? $wpdc_text_global[ $wpdc_slot ] : '';
-					$wpdc_fallback = isset( $wpdc_text_defaults[ $wpdc_slot ] ) ? $wpdc_text_defaults[ $wpdc_slot ] : '';
-					$wpdc_variants = isset( $wpdc_text_presets[ $wpdc_slot ] ) ? $wpdc_text_presets[ $wpdc_slot ] : array();
-					?>
-					<tr>
-						<th scope="row">
-							<label for="wpdc_text_<?php echo esc_attr( $wpdc_slot ); ?>">
-								<?php echo esc_html( $wpdc_label ); ?>
-							</label>
-						</th>
-						<td>
-							<textarea class="large-text" rows="2"
-								id="wpdc_text_<?php echo esc_attr( $wpdc_slot ); ?>"
-								name="wpdc_text[<?php echo esc_attr( $wpdc_slot ); ?>]"
-								placeholder="<?php echo esc_attr( $wpdc_fallback ); ?>"><?php echo esc_textarea( $wpdc_value ); ?></textarea>
-
-							<?php if ( $wpdc_variants ) : ?>
-								<p>
-									<label class="wpdc-inline">
-										<?php esc_html_e( 'Готовый вариант:', 'wp-diplom' ); ?>
-										<select class="wpdc-preset-select" data-target="wpdc_text_<?php echo esc_attr( $wpdc_slot ); ?>">
-											<option value=""><?php esc_html_e( '— выбрать —', 'wp-diplom' ); ?></option>
-											<?php foreach ( $wpdc_variants as $wpdc_variant ) : ?>
-												<option value="<?php echo esc_attr( $wpdc_variant ); ?>"><?php echo esc_html( $wpdc_variant ); ?></option>
-											<?php endforeach; ?>
-										</select>
-									</label>
-								</p>
-							<?php endif; ?>
-						</td>
-					</tr>
-				<?php endforeach; ?>
-
-				<tr>
-					<th scope="row"><?php esc_html_e( 'Подстановки', 'wp-diplom' ); ?></th>
-					<td>
-						<p class="description">
-							<?php foreach ( $wpdc_placeholders as $wpdc_code => $wpdc_hint ) : ?>
-								<code><?php echo esc_html( $wpdc_code ); ?></code>
-							<?php endforeach; ?>
-						</p>
 					</td>
 				</tr>
 			</tbody>

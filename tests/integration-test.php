@@ -217,6 +217,16 @@ foreach ( array( 'wpdc_email_subject', 'wpdc_email_body', 'wpdc_sender_name', 'w
 check( false === strpos( $settings_view, 'Письмо с сертификатом' ), 'раздел «Письмо с сертификатом» удалён' );
 check( false !== strpos( $settings_view, 'wpdc_sample_teacher' ), 'поле «Преподаватель в предпросмотре» сохранено' );
 
+// --- Тексты сертификата: в настройках раздела больше нет ------------------
+check( false === strpos( $settings_view, 'Тексты сертификата' ), 'раздел «Тексты сертификата» удалён из настроек' );
+check( false === strpos( $settings_view, 'wpdc_text[' ), 'в настройках нет полей wpdc_text[...]' );
+check( false === strpos( $settings_view, 'id=\"wpdc-texts\"' ), 'якорь #wpdc-texts больше не используется' );
+
+$texts_box = (string) file_get_contents( WPDC_DIR . 'admin/views/meta-template-texts.php' );
+
+check( false !== strpos( $texts_box, 'wpdc_text[' ), 'метабокс «Тексты бланка» остался в редакторе бланка' );
+check( false === strpos( $texts_box, 'settings_url' ), 'ссылки на удалённый раздел настроек нет' );
+
 $defaults = WPDC_Plugin::settings();
 
 check( '' !== trim( (string) $defaults['email_subject'] ), 'тема письма по умолчанию не пуста' );
