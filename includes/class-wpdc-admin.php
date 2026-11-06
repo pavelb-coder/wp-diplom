@@ -26,6 +26,7 @@ class WPDC_Admin {
 		add_action( 'save_post_wpdc_template', array( $this, 'save_template' ), 10, 2 );
 		add_action( 'save_post_wpdc_certificate', array( $this, 'save_certificate' ), 10, 2 );
 		add_action( 'before_delete_post', array( $this, 'delete_files' ) );
+		add_filter( 'upload_mimes', array( $this, 'allow_font_mimes' ) );
 
 		add_filter( 'manage_wpdc_certificate_posts_columns', array( $this, 'certificate_columns' ) );
 		add_action( 'manage_wpdc_certificate_posts_custom_column', array( $this, 'certificate_column_content' ), 10, 2 );
@@ -136,6 +137,8 @@ class WPDC_Admin {
 				'useBackground'    => __( 'Использовать это изображение', 'wp-diplom' ),
 				'confirmDelete'    => __( 'Удалить поле?', 'wp-diplom' ),
 				'choosePdf'        => __( 'Выбрать PDF-шаблон', 'wp-diplom' ),
+				'chooseFont'       => __( 'Выбрать шрифт .ttf', 'wp-diplom' ),
+				'useFont'          => __( 'Использовать этот шрифт', 'wp-diplom' ),
 				'usePdf'           => __( 'Использовать этот PDF', 'wp-diplom' ),
 			)
 		);
@@ -156,6 +159,15 @@ class WPDC_Admin {
 			'wpdc_template',
 			'normal',
 			'high'
+		);
+
+		add_meta_box(
+			'wpdc_template_fonts',
+			__( 'Шрифты бланка', 'wp-diplom' ),
+			array( $this, 'render_template_fonts_box' ),
+			'wpdc_template',
+			'normal',
+			'default'
 		);
 
 		add_meta_box(
@@ -246,6 +258,103 @@ class WPDC_Admin {
 	 *
 	 * @param WP_Post $post Запись.
 	 */
+	/**
+	 * Метабокс «Шрифты бланка».
+	 *
+	 * @param WP_Post $post Запись.
+	 */
+	public function render_template_fonts_box( $post ) {
+		wp_nonce_field( 'wpdc_save_template', 'wpdc_template_nonce_fonts' );
+
+		$fonts   = self::sanitize_fonts( get_post_meta( $post->ID, '_wpdc_fonts', true ) );
+		$builtin = array( 'Sans (DejaVu)', 'Serif (DejaVu)' );
+
+		include WPDC_DIR . 'admin/views/meta-template-fonts.php';
+	}
+
+	/**
+	 * Разрешает загружать .ttf в медиатеку.
+	 *
+	 * @param array<string, string> $mimes Разрешённые типы.
+	 * @return array<string, string>
+	 */
+	public function allow_font_mimes( $mimes ) {
+		$mimes['ttf'] = 'font/ttf';
+
+		return $mimes;
+	}
+
+	/**
+	 * Гарнитуры для списка в полях бланка.
+	 *
+	 * @param int $template_id id бланка.
+	 * @return array<string, string>
+	 */
+	public static function font_families( $template_id = 0 ) {
+		$families = array(
+			'sans'  => __( 'Sans (DejaVu)', 'wp-diplom' ),
+			'serif' => __( 'Serif (DejaVu)', 'wp-diplom' ),
+		);
+
+		$rows = $template_id ? get_post_meta( $template_id, '_wpdc_fonts', true ) : array();
+
+		foreach ( self::sanitize_fonts( $rows ) as $font ) {
+			$families[ $font['family'] ] = '' !== $font['label'] ? $font['label'] : $font['family'];
+		}
+
+		return $families;
+	}
+
+	/**
+	 * Очистка набора подключённых шрифтов.
+	 *
+	 * Строки без файлов отбрасываются: подключать нечего.
+	 *
+	 * @param mixed $raw Сырые данные.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public static function sanitize_fonts( $raw ) {
+		$clean = array();
+
+		if ( ! is_array( $raw ) ) {
+			return $clean;
+		}
+
+		foreach ( $raw as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+
+			$regular = absint( $row['regular'] ?? 0 );
+			$bold    = absint( $row['bold'] ?? 0 );
+
+			if ( ! $regular && ! $bold ) {
+				continue;
+			}
+
+			$family = sanitize_key( (string) ( $row['family'] ?? '' ) );
+
+			// Ключ не задан или был не латиницей — берём имя файла шрифта.
+			if ( '' === $family ) {
+				$file   = get_attached_file( $regular ? $regular : $bold );
+				$family = sanitize_key( pathinfo( basename( (string) $file ), PATHINFO_FILENAME ) );
+			}
+
+			if ( '' === $family ) {
+				$family = 'font-' . ( count( $clean ) + 1 );
+			}
+
+			$clean[] = array(
+				'family'  => $family,
+				'label'   => sanitize_text_field( wp_unslash( (string) ( $row['label'] ?? '' ) ) ),
+				'regular' => $regular,
+				'bold'    => $bold,
+			);
+		}
+
+		return $clean;
+	}
+
 	public function render_template_params_box( $post ) {
 		wp_nonce_field( 'wpdc_save_template', 'wpdc_template_nonce_params' );
 
@@ -299,6 +408,7 @@ class WPDC_Admin {
 		}
 
 		$placeholders = WPDC_Renderer::placeholders();
+		$families     = self::font_families( $post->ID );
 		$preview_url  = wp_nonce_url(
 			add_query_arg(
 				array(
@@ -524,6 +634,15 @@ class WPDC_Admin {
 				'inset_y' => max( 0, min( 100, (float) ( $_POST['wpdc_border_inset_y'] ?? 12 ) ) ),
 			)
 		);
+
+		// Шрифты бланка.
+		$fonts = self::sanitize_fonts( wp_unslash( $_POST['wpdc_fonts'] ?? array() ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+		if ( $fonts ) {
+			update_post_meta( $post_id, '_wpdc_fonts', $fonts );
+		} else {
+			delete_post_meta( $post_id, '_wpdc_fonts' );
+		}
 
 		// Параметры бланка.
 		if ( isset( $_POST['wpdc_params'] ) && is_array( $_POST['wpdc_params'] ) ) {

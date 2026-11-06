@@ -258,10 +258,76 @@ check( 'ДИП' === $params['number_prefix'], 'префикс номера бе�
 check( 3 === (int) $params['number_padding'], 'разрядность берётся из бланка' );
 check( 'Тестовый сайт' === $params['organization'], 'пустой параметр берётся из общих настроек' );
 
+// --- Сторонние шрифты бланка --------------------------------------------
+$GLOBALS['wpdc_stub_attachments'] = array(
+	501 => WPDC_DIR . 'assets/fonts/DejaVuSerif.ttf',
+	502 => WPDC_DIR . 'assets/fonts/DejaVuSans-Bold.ttf',
+);
+
+check( true === isset( $admin->allow_font_mimes( array() )['ttf'] ), 'в медиатеку разрешено загружать .ttf' );
+
+$raw_fonts = array(
+	array( 'family' => 'gothic', 'label' => 'Готика', 'regular' => 501, 'bold' => 0 ),
+	array( 'family' => '', 'label' => '', 'regular' => 0, 'bold' => 0 ),
+	array( 'family' => 'My Font!', 'label' => 'Мой шрифт', 'regular' => 502, 'bold' => 501 ),
+	'мусор',
+);
+
+$clean_fonts = WPDC_Admin::sanitize_fonts( $raw_fonts );
+
+check( 2 === count( $clean_fonts ), 'пустые строки шрифтов отбрасываются' );
+check( 'gothic' === $clean_fonts[0]['family'], 'ключ семейства сохраняется' );
+check( 'myfont' === $clean_fonts[1]['family'], 'ключ семейства санитизируется (myfont)' );
+check( 501 === $clean_fonts[1]['bold'], 'жирный файл сохраняется' );
+
+$auto_fonts = WPDC_Admin::sanitize_fonts( array( array( 'family' => '', 'label' => '', 'regular' => 501 ) ) );
+
+check( 'dejavuserif' === ( $auto_fonts[0]['family'] ?? '' ), 'пустой ключ берётся из имени файла (dejavuserif)' );
+
+update_post_meta( $template_id, '_wpdc_fonts', $clean_fonts );
+
+$families = WPDC_Admin::font_families( $template_id );
+
+check( 'sans' === array_key_first( $families ), 'встроенная гарнитура sans остаётся первой' );
+check( isset( $families['serif'] ), 'встроенная гарнитура serif на месте' );
+check( 'Готика' === ( $families['gothic'] ?? '' ), 'подключённый шрифт попал в список гарнитур' );
+check( 'Мой шрифт' === ( $families['myfont'] ?? '' ), 'название шрифта выводится как подпись' );
+
+$font_config = WPDC_Certificate::template_config( $template_id );
+
+check( isset( $font_config['fonts']['gothic'] ), 'шрифты бланка попали в конфигурацию' );
+check( WPDC_DIR . 'assets/fonts/DejaVuSerif.ttf' === ( $font_config['fonts']['gothic']['regular'] ?? '' ), 'путь к обычному файлу разрешён' );
+
+$font_fields = array(
+	array( 'id' => 'name', 'text' => '{recipient_name}', 'x' => 20, 'y' => 20, 'w' => 200, 'h' => 20, 'size' => 24, 'font' => 'gothic' ),
+);
+
+$font_normalized = WPDC_Renderer::normalize_template( array( 'fields' => $font_fields, 'fonts' => $font_config['fonts'] ) );
+
+check( 'gothic' === $font_normalized['fields'][0]['font'], 'поле бланка принимает подключённую гарнитуру' );
+
+$fonts_view = (string) file_get_contents( WPDC_DIR . 'admin/views/meta-template-fonts.php' );
+$fields_view = (string) file_get_contents( WPDC_DIR . 'admin/views/meta-template-fields.php' );
+$admin_js    = (string) file_get_contents( WPDC_DIR . 'assets/js/admin.js' );
+
+check( false !== strpos( $fonts_view, 'wpdc_fonts[' ), 'метабокс шрифтов отправляет wpdc_fonts[...]' );
+check( false !== strpos( $fonts_view, 'wpdc-font-row' ), 'в метабоксе шрифтов есть строка шрифта' );
+check( false !== strpos( $admin_source, 'wpdc_template_nonce_fonts' ), 'в метабоксе шрифтов есть nonce' );
+check( false !== strpos( $fields_view, '$families' ), 'список гарнитур у поля берётся из бланка' );
+check( false !== strpos( $admin_js, '.wpdc-font-pick' ), 'в админ-скрипте есть выбор файла шрифта' );
+check( false !== strpos( $admin_js, '#wpdc-add-font' ), 'в админ-скрипте есть добавление шрифта' );
+
+unset( $GLOBALS['wpdc_stub_attachments'] );
+
 // --- Тексты сертификата: в настройках раздела больше нет ------------------
-check( false === strpos( $settings_view, 'Тексты сертификата' ), 'раздел «Тексты сертификата» удалён из настроек' );
-check( false === strpos( $settings_view, 'wpdc_text[' ), 'в настройках нет полей wpdc_text[...]' );
-check( false === strpos( $settings_view, 'id=\"wpdc-texts\"' ), 'якорь #wpdc-texts больше не используется' );
+$views_source = '';
+
+foreach ( (array) glob( WPDC_DIR . 'admin/views/*.php' ) as $view_file ) {
+	$views_source .= (string) file_get_contents( $view_file );
+}
+
+check( false === strpos( $views_source, 'Тексты сертификата' ), 'экрана «Тексты сертификата» в админке нет' );
+check( false === strpos( $views_source, 'id=\"wpdc-texts\"' ), 'якорь #wpdc-texts больше не используется' );
 
 $texts_box = (string) file_get_contents( WPDC_DIR . 'admin/views/meta-template-texts.php' );
 

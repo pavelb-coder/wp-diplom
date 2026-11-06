@@ -111,7 +111,7 @@ class WPDC_Renderer {
 
 		list( $width_mm, $height_mm ) = self::page_size( $template['page'], $template );
 
-		$pdf = new WPDC_PDF_Writer( $this->fonts() );
+		$pdf = new WPDC_PDF_Writer( array_merge( $this->fonts(), $template['fonts'] ) );
 
 		if ( ! $pdf->has_fonts() ) {
 			throw new RuntimeException( 'Не найдены файлы шрифтов в ' . $this->fonts_dir );
@@ -283,6 +283,44 @@ class WPDC_Renderer {
 			$template['background_fit'] = 'cover';
 		}
 
+		// Подключённые шрифты бланка: семейство => стиль => путь к .ttf.
+		$fonts = array();
+
+		foreach ( (array) ( $template['fonts'] ?? array() ) as $family => $styles ) {
+			// Рендерер не зависит от WordPress: чистим ключ сами.
+			$family = strtolower( preg_replace( '/[^A-Za-z0-9_\-]/', '', (string) $family ) );
+
+			if ( '' === $family || ! is_array( $styles ) ) {
+				continue;
+			}
+
+			$clean = array();
+
+			foreach ( array( 'regular', 'bold' ) as $style ) {
+				$path = isset( $styles[ $style ] ) ? (string) $styles[ $style ] : '';
+
+				if ( '' !== $path && is_readable( $path ) ) {
+					$clean[ $style ] = $path;
+				}
+			}
+
+			if ( ! $clean ) {
+				continue;
+			}
+
+			if ( ! isset( $clean['bold'] ) ) {
+				$clean['bold'] = $clean['regular'];
+			}
+
+			if ( ! isset( $clean['regular'] ) ) {
+				$clean['regular'] = $clean['bold'];
+			}
+
+			$fonts[ $family ] = $clean;
+		}
+
+		$families = array_merge( array( 'sans', 'serif' ), array_keys( $fonts ) );
+
 		// Явно заданные тексты (настройки или переопределение бланка) заменяют
 		// текст стандартного поля. Поля с нестандартным id не трогаем.
 		$explicit = array();
@@ -322,10 +360,16 @@ class WPDC_Renderer {
 				$merged['text'] = $explicit[ $slot ];
 			}
 
+			// Неизвестное семейство (шрифт отключили) — печатаем встроенным.
+			if ( ! in_array( (string) $merged['font'], $families, true ) ) {
+				$merged['font'] = 'sans';
+			}
+
 			$fields[] = $merged;
 		}
 
 		$template['fields'] = $fields;
+		$template['fonts']  = $fonts;
 
 		return $template;
 	}
@@ -449,7 +493,7 @@ class WPDC_Renderer {
 				'w'           => self::clamp( $field['w'] ?? 100, 1, 2000 ),
 				'h'           => self::clamp( $field['h'] ?? 20, 0, 2000 ),
 				'size'        => self::clamp( $field['size'] ?? 14, 4, 200 ),
-				'font'        => in_array( $field['font'] ?? 'sans', array( 'sans', 'serif' ), true ) ? $field['font'] : 'sans',
+				'font'        => sanitize_key( (string) ( $field['font'] ?? 'sans' ) ) ?: 'sans',
 				'style'       => in_array( $field['style'] ?? 'regular', array( 'regular', 'bold' ), true ) ? $field['style'] : 'regular',
 				'color'       => self::sanitize_color( $field['color'] ?? '#000000' ),
 				'align'       => in_array( $field['align'] ?? 'center', array( 'left', 'center', 'right' ), true ) ? $field['align'] : 'center',

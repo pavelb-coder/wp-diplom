@@ -7,6 +7,7 @@
  * @var array<int, array<string, mixed>> $fields       Поля.
  * @var array<string, string>            $placeholders Плейсхолдеры.
  * @var string                           $preview_url  Ссылка предпросмотра.
+ * @var array<string, string>            $families     Гарнитуры: ключ => название.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -19,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @param array<string, mixed> $field Поле.
  * @param int                  $index Индекс.
  */
-$render_row = static function ( $field, $index ) {
+$render_row = static function ( $field, $index ) use ( $families ) {
 	$field = array_merge(
 		array(
 			'id'          => '',
@@ -76,8 +77,11 @@ $render_row = static function ( $field, $index ) {
 
 		<td>
 			<select name="<?php echo esc_attr( $name ); ?>[font]">
-				<option value="sans" <?php selected( $field['font'], 'sans' ); ?>>Sans</option>
-				<option value="serif" <?php selected( $field['font'], 'serif' ); ?>>Serif</option>
+				<?php foreach ( $families as $wpdc_family => $wpdc_label ) : ?>
+					<option value="<?php echo esc_attr( $wpdc_family ); ?>" <?php selected( $field['font'], $wpdc_family ); ?>>
+						<?php echo esc_html( $wpdc_label ); ?>
+					</option>
+				<?php endforeach; ?>
 			</select>
 		</td>
 

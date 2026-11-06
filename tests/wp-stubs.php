@@ -362,7 +362,9 @@ function plugin_basename( $file ) {
 }
 
 function get_attached_file( $attachment_id ) {
-	return '';
+	$map = isset( $GLOBALS['wpdc_stub_attachments'] ) ? (array) $GLOBALS['wpdc_stub_attachments'] : array();
+
+	return isset( $map[ (int) $attachment_id ] ) ? $map[ (int) $attachment_id ] : '';
 }
 
 function home_url( $path = '' ) {

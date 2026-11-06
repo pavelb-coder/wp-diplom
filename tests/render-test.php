@@ -86,6 +86,52 @@ check( 'a4_landscape' === $fallback['page'], 'неизвестный разме�
 list( $w, $h ) = WPDC_Renderer::page_size( 'a4_landscape' );
 check( 297.0 === $w && 210.0 === $h, 'размер A4 landscape = 297×210 мм' );
 
+// --- Сторонние шрифты ----------------------------------------------------
+$font_file = dirname( __DIR__ ) . '/assets/fonts/DejaVuSerif.ttf';
+
+$brand_template = WPDC_Renderer::normalize_template(
+	array(
+		'page'   => 'a4_landscape',
+		'border' => array( 'enabled' => false ),
+		'fonts'  => array( 'brand' => array( 'regular' => $font_file ) ),
+		'fields' => array(
+			array( 'id' => 'name', 'text' => '{recipient_name}', 'x' => 20, 'y' => 90, 'w' => 257, 'h' => 20, 'size' => 30, 'font' => 'brand', 'style' => 'bold' ),
+		),
+	)
+);
+
+check( isset( $brand_template['fonts']['brand'] ), 'подключённый шрифт сохраняется в бланке' );
+check( isset( $brand_template['fonts']['brand']['bold'] ), 'жирный стиль откатывается на обычный файл' );
+check( 'brand' === $brand_template['fields'][0]['font'], 'поле может использовать своё семейство' );
+
+$font_renderer = new WPDC_Renderer();
+$brand_pdf     = $font_renderer->render(
+	array(
+		'page'   => 'a4_landscape',
+		'border' => array( 'enabled' => false ),
+		'fonts'  => array( 'brand' => array( 'regular' => $font_file ) ),
+		'fields' => array(
+			array( 'id' => 'name', 'text' => '{recipient_name}', 'x' => 20, 'y' => 90, 'w' => 257, 'h' => 20, 'size' => 30, 'font' => 'brand', 'style' => 'bold' ),
+		),
+	),
+	array( 'recipient_name' => 'Проверка шрифта' )
+);
+
+check( 0 === strpos( $brand_pdf, '%PDF-1.4' ), 'PDF со сторонним шрифтом собран' );
+check( false !== strpos( $brand_pdf, '/brand-bold' ), 'в PDF используется подключённое семейство' );
+
+$fallback_template = WPDC_Renderer::normalize_template(
+	array( 'fields' => array( array( 'id' => 'name', 'text' => 'x', 'font' => 'нет-такого-шрифта' ) ) )
+);
+
+check( 'sans' === $fallback_template['fields'][0]['font'], 'неизвестное семейство → sans' );
+
+$no_file = WPDC_Renderer::normalize_template(
+	array( 'fonts' => array( 'ghost' => array( 'regular' => '/нет/такого/файла.ttf' ) ) )
+);
+
+check( empty( $no_file['fonts'] ), 'шрифт без читаемого файла не подключается' );
+
 // --- Цвета ---------------------------------------------------------------
 check( '#2f6fed' === WPDC_Renderer::sanitize_color( '#2f6fed' ), 'валидный HEX-цвет сохранён' );
 check( '#000000' === WPDC_Renderer::sanitize_color( 'javascript:alert(1)' ), 'невалидный цвет → чёрный' );

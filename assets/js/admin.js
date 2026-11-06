@@ -137,6 +137,71 @@
 			}
 		});
 
+		/* --- Шрифты бланка --- */
+		var fontsBody = $('#wpdc-fonts-body');
+
+		function nextFontIndex() {
+			var rows = fontsBody.find('.wpdc-font-row');
+
+			if (rows.length === 0) {
+				return 0;
+			}
+
+			return Math.max.apply(null, rows.map(function () {
+				var match = $(this).find('input').first().attr('name').match(/\[(\d+)\]/);
+				return match ? parseInt(match[1], 10) : 0;
+			}).get()) + 1;
+		}
+
+		$('#wpdc-add-font').on('click', function (event) {
+			event.preventDefault();
+
+			var template = $('#tmpl-wpdc-font-row').html().replace(/__index__/g, nextFontIndex());
+
+			fontsBody.append(template);
+		});
+
+		fontsBody.on('click', '.wpdc-remove-font', function (event) {
+			event.preventDefault();
+			$(this).closest('.wpdc-font-row').remove();
+		});
+
+		fontsBody.on('click', '.wpdc-font-pick', function (event) {
+			event.preventDefault();
+
+			var row = $(this).closest('.wpdc-font-row');
+			var target = $(this).siblings('.wpdc-font-id');
+			var label = $(this).siblings('.wpdc-font-name');
+
+			var frame = wp.media({
+				title: wpdcAdmin.chooseFont,
+				button: { text: wpdcAdmin.useFont },
+				library: { type: 'font/ttf' },
+				multiple: false
+			});
+
+			frame.on('select', function () {
+				var attachment = frame.state().get('selection').first().toJSON();
+
+				target.val(attachment.id);
+				label.text(attachment.filename || attachment.title);
+
+				// Название семейства подставляем из имени файла, если пусто.
+				var family = row.find('.wpdc-font-family');
+				var labelInput = row.find('input[name$="[label]"]');
+
+				if (!family.val()) {
+					family.val((attachment.filename || 'font').replace(/\.ttf$/i, '').toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+				}
+
+				if (!labelInput.val()) {
+					labelInput.val((attachment.filename || 'font').replace(/\.ttf$/i, ''));
+				}
+			});
+
+			frame.open();
+		});
+
 		/* --- Дополнительные поля сертификата --- */
 		$('#wpdc-add-custom').on('click', function (event) {
 			event.preventDefault();

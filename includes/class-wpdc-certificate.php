@@ -90,7 +90,55 @@ class WPDC_Certificate {
 			'texts'            => $template_id && is_array( get_post_meta( $template_id, '_wpdc_texts', true ) )
 				? (array) get_post_meta( $template_id, '_wpdc_texts', true )
 				: array(),
+			'fonts'            => self::template_fonts( $template_id ),
 		);
+	}
+
+	/**
+	 * Подключённые шрифты бланка: семейство => стиль => путь к .ttf.
+	 *
+	 * @param int $template_id id бланка.
+	 * @return array<string, array<string, string>>
+	 */
+	public static function template_fonts( $template_id ) {
+		$template_id = absint( $template_id );
+		$fonts       = array();
+
+		if ( ! $template_id ) {
+			return $fonts;
+		}
+
+		$rows = get_post_meta( $template_id, '_wpdc_fonts', true );
+
+		foreach ( (array) $rows as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+
+			$family  = sanitize_key( (string) ( $row['family'] ?? '' ) );
+			$regular = absint( $row['regular'] ?? 0 );
+			$bold    = absint( $row['bold'] ?? 0 );
+
+			if ( '' === $family ) {
+				continue;
+			}
+
+			$paths = array();
+
+			foreach ( array( 'regular' => $regular, 'bold' => $bold ) as $style => $attachment_id ) {
+				$file = $attachment_id ? (string) get_attached_file( $attachment_id ) : '';
+
+				if ( '' !== $file && is_readable( $file ) ) {
+					$paths[ $style ] = $file;
+				}
+			}
+
+			if ( $paths ) {
+				$fonts[ $family ] = $paths;
+			}
+		}
+
+		return $fonts;
 	}
 
 	/**
