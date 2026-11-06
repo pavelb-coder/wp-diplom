@@ -19,7 +19,6 @@ class WPDC_Post_Types {
 	 */
 	public function hooks() {
 		add_action( 'init', array( $this, 'register_post_types' ) );
-		add_action( 'init', array( $this, 'register_taxonomies' ) );
 		add_filter( 'post_updated_messages', array( $this, 'updated_messages' ) );
 	}
 
@@ -84,7 +83,10 @@ class WPDC_Post_Types {
 				'menu_position'       => 26,
 				'capability_type'     => 'post',
 				'capabilities'        => array(
-					'create_posts' => 'edit_posts',
+					// Сертификаты создаются только автоматически (массовая
+					// генерация, API), поэтому экран «Добавить сертификат»
+					// намеренно недоступен.
+					'create_posts' => 'do_not_allow',
 				),
 				'map_meta_cap'        => true,
 				'supports'            => array( 'title' ),
@@ -95,29 +97,6 @@ class WPDC_Post_Types {
 		);
 	}
 
-	/**
-	 * Таксономия «Программы обучения».
-	 */
-	public function register_taxonomies() {
-		register_taxonomy(
-			'wpdc_program',
-			array( 'wpdc_certificate' ),
-			array(
-				'labels'            => array(
-					'name'          => __( 'Программы', 'wp-diplom' ),
-					'singular_name' => __( 'Программа', 'wp-diplom' ),
-					'add_new_item'  => __( 'Добавить программу', 'wp-diplom' ),
-					'edit_item'     => __( 'Редактировать программу', 'wp-diplom' ),
-					'search_items'  => __( 'Искать программы', 'wp-diplom' ),
-				),
-				'public'            => false,
-				'show_ui'           => true,
-				'show_admin_column' => true,
-				'hierarchical'      => true,
-				'show_in_rest'      => false,
-			)
-		);
-	}
 
 	/**
 	 * Сообщения об обновлении записей.

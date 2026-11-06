@@ -104,6 +104,25 @@ foreach ( $forbidden as $label => $pattern ) {
 	check( empty( $hits ), 'нет чужих имён: ' . $label . ( $hits ? ' — найдено в ' . implode( ', ', array_keys( $hits ) ) : '' ) );
 }
 
+// --- 1.5. Ни одного «хвоста» старого префикса ---------------------------
+// Именно так проскочили хуки вида save_post_wpd_template: слева от wpd_ стоял
+// символ слова, и проверка по границе слова их не видела.
+$tails = array();
+
+foreach ( $files as $file ) {
+	if ( 'conflict-test.php' === basename( $file ) ) {
+		continue;
+	}
+
+	$content = (string) file_get_contents( $file );
+
+	if ( preg_match_all( '/[A-Za-z0-9_]wpd_[a-z]/', $content, $m ) ) {
+		$tails[ substr( $file, strlen( $root ) + 1 ) ] = array_unique( $m[0] );
+	}
+}
+
+check( empty( $tails ), 'нет имён вида …wpd_… (хуки, фильтры, опции)' . ( $tails ? ': ' . wp_json_encode( $tails ) : '' ) );
+
 // --- 2. Свой префикс действительно используется --------------------------
 $main = (string) file_get_contents( $root . '/wp-diplom.php' );
 
@@ -134,6 +153,22 @@ check( empty( $leftovers ), 'старые слаги не используютс
 // --- 4. Текст домена и слаг плагина не тронуты ---------------------------
 check( false !== strpos( $main, 'Text Domain:       wp-diplom' ), 'текстовый домен wp-diplom сохранён' );
 check( file_exists( $root . '/wp-diplom.php' ), 'главный файл wp-diplom.php на месте (слаг плагина не менялся)' );
+
+// --- 5. Хуки ссылаются на реальные типы записей плагина -----------------
+$admin_file = (string) file_get_contents( $root . '/includes/class-wpdc-admin.php' );
+
+preg_match_all( "/'(save_post_[a-z_]+|manage_[a-z_]+_posts_columns)'/", $admin_file, $hooks );
+
+$bad_hooks = array();
+
+foreach ( array_unique( $hooks[1] ) as $hook ) {
+	if ( ! preg_match( '/wpdc_(certificate|template)/', $hook ) ) {
+		$bad_hooks[] = $hook;
+	}
+}
+
+check( empty( $bad_hooks ), 'все хуки указывают на wpdc_certificate / wpdc_template' . ( $bad_hooks ? ': ' . implode( ', ', $bad_hooks ) : '' ) );
+check( count( $hooks[1] ) >= 4, 'хуки сохранения и колонок найдены: ' . count( array_unique( $hooks[1] ) ) );
 
 echo "\n";
 echo "Пройдено: {$pass}, провалено: {$fail}\n";

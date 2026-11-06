@@ -63,6 +63,7 @@ class WPDC_Renderer {
 			'a5_portrait'      => self::t( 'A5, книжная (148×210 мм)' ),
 			'letter_landscape' => self::t( 'Letter, альбомная (279×216 мм)' ),
 			'letter_portrait'  => self::t( 'Letter, книжная (216×279 мм)' ),
+			'pdf'              => self::t( 'По размеру PDF-шаблона' ),
 		);
 	}
 
@@ -72,7 +73,18 @@ class WPDC_Renderer {
 	 * @param string $key Ключ размера.
 	 * @return float[]
 	 */
-	public static function page_size( $key ) {
+	public static function page_size( $key, array $template = array() ) {
+		if ( 'pdf' === $key ) {
+			$width  = isset( $template['pdf_width_mm'] ) ? (float) $template['pdf_width_mm'] : 0.0;
+			$height = isset( $template['pdf_height_mm'] ) ? (float) $template['pdf_height_mm'] : 0.0;
+
+			if ( $width > 0 && $height > 0 ) {
+				return array( $width, $height );
+			}
+
+			return self::PAGE_SIZES['a4_landscape'];
+		}
+
 		return self::PAGE_SIZES[ $key ] ?? self::PAGE_SIZES['a4_landscape'];
 	}
 
@@ -87,7 +99,7 @@ class WPDC_Renderer {
 		$template = self::normalize_template( $template );
 		$data     = self::normalize_data( $data );
 
-		list( $width_mm, $height_mm ) = self::page_size( $template['page'] );
+		list( $width_mm, $height_mm ) = self::page_size( $template['page'], $template );
 
 		$pdf = new WPDC_PDF_Writer( $this->fonts() );
 
@@ -109,11 +121,23 @@ class WPDC_Renderer {
 
 		$pdf->add_page( $width_mm * $mm, $height_mm * $mm );
 
-		// Фон: заливка + изображение.
+		// Фон: заливка + подложка.
 		$pdf->set_fill_color( $template['background_color'] );
 		$pdf->rect( 0, 0, $width_mm * $mm, $height_mm * $mm, 'F' );
 
-		if ( $template['background'] && is_readable( $template['background'] ) ) {
+		$has_pdf = $template['pdf'] && is_readable( $template['pdf'] );
+
+		if ( $has_pdf ) {
+			$pdf->pdf_page(
+				$template['pdf'],
+				$template['pdf_page'],
+				0,
+				0,
+				$width_mm * $mm,
+				$height_mm * $mm,
+				'stretch' === $template['background_fit'] ? 'stretch' : 'contain'
+			);
+		} elseif ( $template['background'] && is_readable( $template['background'] ) ) {
 			$pdf->image(
 				$template['background'],
 				0,
@@ -212,6 +236,10 @@ class WPDC_Renderer {
 		$template = array_merge(
 			array(
 				'page'              => 'a4_landscape',
+				'pdf'               => '',
+				'pdf_page'          => 0,
+				'pdf_width_mm'      => 0.0,
+				'pdf_height_mm'     => 0.0,
 				'background'        => '',
 				'background_color'  => '#ffffff',
 				'background_fit'    => 'cover',
@@ -234,9 +262,11 @@ class WPDC_Renderer {
 			(array) $template['border']
 		);
 
-		if ( ! isset( self::PAGE_SIZES[ $template['page'] ] ) ) {
+		if ( 'pdf' !== $template['page'] && ! isset( self::PAGE_SIZES[ $template['page'] ] ) ) {
 			$template['page'] = 'a4_landscape';
 		}
+
+		$template['pdf_page'] = max( 0, (int) $template['pdf_page'] );
 
 		if ( ! in_array( $template['background_fit'], array( 'cover', 'contain', 'stretch' ), true ) ) {
 			$template['background_fit'] = 'cover';

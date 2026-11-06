@@ -31,8 +31,8 @@ function wpdc_uninstall_site() {
 
 	// Транзиенты массовой генерации.
 	$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		"DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_wpd_bulk_result_%'"
-		. " OR option_name LIKE '_transient_timeout_wpd_bulk_result_%'"
+		"DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_wpdc_bulk_result_%'"
+		. " OR option_name LIKE '_transient_timeout_wpdc_bulk_result_%'"
 	);
 
 	if ( ! defined( 'WPDC_REMOVE_ALL_DATA' ) || ! WPDC_REMOVE_ALL_DATA ) {
@@ -69,19 +69,24 @@ function wpdc_uninstall_site() {
 		@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 	}
 
-	// Термины таксономии.
-	$terms = get_terms(
+	// Вложенные PDF-шаблоны бланков.
+	$pdf_ids = get_posts(
 		array(
-			'taxonomy'   => 'wpdc_program',
-			'hide_empty' => false,
-			'fields'     => 'ids',
+			'post_type'      => 'attachment',
+			'post_status'    => 'any',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				array(
+					'key'     => '_wpdc_pdf_template',
+					'compare' => 'EXISTS',
+				),
+			),
 		)
 	);
 
-	if ( ! is_wp_error( $terms ) ) {
-		foreach ( $terms as $term_id ) {
-			wp_delete_term( $term_id, 'wpdc_program' );
-		}
+	foreach ( $pdf_ids as $pdf_id ) {
+		wp_delete_attachment( $pdf_id, true );
 	}
 }
 

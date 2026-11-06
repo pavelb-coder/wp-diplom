@@ -60,8 +60,24 @@ class WPDC_Certificate {
 
 		$settings = WPDC_Plugin::settings();
 
+		// PDF-шаблон: путь к файлу и размер его страницы.
+		$pdf_id   = $template_id ? absint( get_post_meta( $template_id, '_wpdc_pdf_id', true ) ) : 0;
+		$pdf_path = '';
+
+		if ( $pdf_id ) {
+			$file = get_attached_file( $pdf_id );
+
+			if ( $file && is_readable( $file ) ) {
+				$pdf_path = $file;
+			}
+		}
+
 		return array(
 			'page'             => (string) ( $template_id ? get_post_meta( $template_id, '_wpdc_page', true ) : 'a4_landscape' ),
+			'pdf'              => $pdf_path,
+			'pdf_page'         => $template_id ? absint( get_post_meta( $template_id, '_wpdc_pdf_page', true ) ) : 0,
+			'pdf_width_mm'     => $template_id ? (float) get_post_meta( $template_id, '_wpdc_pdf_w_mm', true ) : 0.0,
+			'pdf_height_mm'    => $template_id ? (float) get_post_meta( $template_id, '_wpdc_pdf_h_mm', true ) : 0.0,
 			'background'       => $background,
 			'background_color' => (string) ( $template_id ? get_post_meta( $template_id, '_wpdc_background_color', true ) : '#ffffff' ),
 			'background_fit'   => (string) ( $template_id ? get_post_meta( $template_id, '_wpdc_background_fit', true ) : 'cover' ),

@@ -17,8 +17,8 @@
 			}
 
 			frame = wp.media({
-				title: wpdAdmin.chooseBackground,
-				button: { text: wpdAdmin.useBackground },
+				title: wpdcAdmin.chooseBackground,
+				button: { text: wpdcAdmin.useBackground },
 				library: { type: 'image' },
 				multiple: false
 			});
@@ -46,6 +46,56 @@
 			$('#wpdc-background-preview').empty();
 		});
 
+		/* --- PDF-шаблон --- */
+		// Форма редактирования записи по умолчанию без enctype, поэтому
+		// загрузка файла напрямую не работала бы.
+		var postForm = $('#post');
+
+		if (postForm.length && postForm.attr('enctype') !== 'multipart/form-data') {
+			postForm.attr('enctype', 'multipart/form-data');
+		}
+
+		var pdfFrame = null;
+
+		$('#wpdc-pdf-select').on('click', function (event) {
+			event.preventDefault();
+
+			if (pdfFrame) {
+				pdfFrame.open();
+				return;
+			}
+
+			pdfFrame = wp.media({
+				title: wpdcAdmin.choosePdf,
+				button: { text: wpdcAdmin.usePdf },
+				library: { type: 'application/pdf' },
+				multiple: false
+			});
+
+			pdfFrame.on('select', function () {
+				var attachment = pdfFrame.state().get('selection').first().toJSON();
+
+				$('#wpdc_pdf_id').val(attachment.id);
+
+				var name = attachment.filename || (attachment.url || '').split('/').pop();
+
+				$('#wpdc-pdf-chosen')
+					.text(name)
+					.show();
+			});
+
+			pdfFrame.open();
+		});
+
+		$('#wpdc_pdf').on('change', function () {
+			var file = this.files && this.files[0];
+			$('#wpdc_pdf_id').val('0');
+
+			if (file) {
+				$('#wpdc-pdf-chosen').text(file.name).show();
+			}
+		});
+
 		/* --- Поля бланка --- */
 		var body = $('#wpdc-fields-body');
 
@@ -69,7 +119,7 @@
 		body.on('click', '.wpdc-remove-field', function (event) {
 			event.preventDefault();
 
-			if (window.confirm(wpdAdmin.confirmDelete)) {
+			if (window.confirm(wpdcAdmin.confirmDelete)) {
 				$(this).closest('.wpdc-field-row').remove();
 			}
 		});

@@ -22,21 +22,21 @@ class WPDC_Admin {
 		add_action( 'admin_notices', array( $this, 'activation_notice' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
 		add_action( 'add_meta_boxes', array( $this, 'meta_boxes' ) );
-		add_action( 'save_post_wpd_template', array( $this, 'save_template' ), 10, 2 );
-		add_action( 'save_post_wpd_certificate', array( $this, 'save_certificate' ), 10, 2 );
+		add_action( 'save_post_wpdc_template', array( $this, 'save_template' ), 10, 2 );
+		add_action( 'save_post_wpdc_certificate', array( $this, 'save_certificate' ), 10, 2 );
 		add_action( 'before_delete_post', array( $this, 'delete_files' ) );
 
-		add_filter( 'manage_wpd_certificate_posts_columns', array( $this, 'certificate_columns' ) );
-		add_action( 'manage_wpd_certificate_posts_custom_column', array( $this, 'certificate_column_content' ), 10, 2 );
-		add_filter( 'manage_wpd_template_posts_columns', array( $this, 'template_columns' ) );
-		add_action( 'manage_wpd_template_posts_custom_column', array( $this, 'template_column_content' ), 10, 2 );
+		add_filter( 'manage_wpdc_certificate_posts_columns', array( $this, 'certificate_columns' ) );
+		add_action( 'manage_wpdc_certificate_posts_custom_column', array( $this, 'certificate_column_content' ), 10, 2 );
+		add_filter( 'manage_wpdc_template_posts_columns', array( $this, 'template_columns' ) );
+		add_action( 'manage_wpdc_template_posts_custom_column', array( $this, 'template_column_content' ), 10, 2 );
 
-		add_action( 'admin_post_wpd_download', array( $this, 'handle_download' ) );
-		add_action( 'admin_post_wpd_preview', array( $this, 'handle_preview' ) );
-		add_action( 'admin_post_wpd_send', array( $this, 'handle_send' ) );
-		add_action( 'admin_post_wpd_bulk_generate', array( $this, 'handle_bulk' ) );
-		add_action( 'admin_post_wpd_bulk_zip', array( $this, 'handle_bulk_zip' ) );
-		add_action( 'admin_post_wpd_save_settings', array( $this, 'handle_settings' ) );
+		add_action( 'admin_post_wpdc_download', array( $this, 'handle_download' ) );
+		add_action( 'admin_post_wpdc_preview', array( $this, 'handle_preview' ) );
+		add_action( 'admin_post_wpdc_send', array( $this, 'handle_send' ) );
+		add_action( 'admin_post_wpdc_bulk_generate', array( $this, 'handle_bulk' ) );
+		add_action( 'admin_post_wpdc_bulk_zip', array( $this, 'handle_bulk_zip' ) );
+		add_action( 'admin_post_wpdc_save_settings', array( $this, 'handle_settings' ) );
 	}
 
 	/* --------------------------------------------------------------------- */
@@ -130,11 +130,13 @@ class WPDC_Admin {
 
 		wp_localize_script(
 			'wpdc-admin',
-			'wpdAdmin',
+			'wpdcAdmin',
 			array(
 				'chooseBackground' => __( 'Выбрать фон бланка', 'wp-diplom' ),
 				'useBackground'    => __( 'Использовать это изображение', 'wp-diplom' ),
 				'confirmDelete'    => __( 'Удалить поле?', 'wp-diplom' ),
+				'choosePdf'        => __( 'Выбрать PDF-шаблон', 'wp-diplom' ),
+				'usePdf'           => __( 'Использовать этот PDF', 'wp-diplom' ),
 			)
 		);
 	}
@@ -209,6 +211,15 @@ class WPDC_Admin {
 			'inset_y' => 12,
 		);
 
+		$pdf_id   = absint( get_post_meta( $post->ID, '_wpdc_pdf_id', true ) );
+		$pdf_file = $pdf_id ? (string) get_attached_file( $pdf_id ) : '';
+		$pdf_name = $pdf_file ? basename( $pdf_file ) : '';
+		$pdf_page = absint( get_post_meta( $post->ID, '_wpdc_pdf_page', true ) );
+		$pdf_w    = (float) get_post_meta( $post->ID, '_wpdc_pdf_w_mm', true );
+		$pdf_h    = (float) get_post_meta( $post->ID, '_wpdc_pdf_h_mm', true );
+		$pdf_err  = (string) get_post_meta( $post->ID, '_wpdc_pdf_error', true );
+		$pdf_url  = $pdf_id ? (string) wp_get_attachment_url( $pdf_id ) : '';
+
 		include WPDC_DIR . 'admin/views/meta-template-design.php';
 	}
 
@@ -278,6 +289,114 @@ class WPDC_Admin {
 	/* --------------------------------------------------------------------- */
 
 	/**
+	 * Сохраняет PDF-шаблон бланка.
+	 *
+	 * Три пути: выбор файла из медиатеки (основной), загрузка через файловое
+	 * поле (если включён enctype) и удаление. Вложение обязательно проверяется
+	 * парсером: битый или зашифрованный PDF не должен попасть в бланк.
+	 *
+	 * @param int $post_id id бланка.
+	 * @return int id вложения с PDF (0, если шаблона нет).
+	 */
+	private function save_pdf_template( $post_id ) {
+		require_once WPDC_DIR . 'includes/pdf/class-wpdc-pdf-source.php';
+
+		$current = absint( get_post_meta( $post_id, '_wpdc_pdf_id', true ) );
+
+		delete_post_meta( $post_id, '_wpdc_pdf_error' );
+
+		// Удаление шаблона.
+		if ( ! empty( $_POST['wpdc_pdf_remove'] ) ) {
+			$current = 0;
+
+			foreach ( array( '_wpdc_pdf_id', '_wpdc_pdf_page', '_wpdc_pdf_w_mm', '_wpdc_pdf_h_mm' ) as $key ) {
+				delete_post_meta( $post_id, $key );
+			}
+
+			return 0;
+		}
+
+		// Запасной путь: файловое поле (работает, если форме включили enctype).
+		$uploaded = isset( $_FILES['wpdc_pdf'] ) && is_array( $_FILES['wpdc_pdf'] )
+			&& isset( $_FILES['wpdc_pdf']['error'] )
+			&& UPLOAD_ERR_NO_FILE !== (int) $_FILES['wpdc_pdf']['error'];
+
+		if ( $uploaded ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+
+			$attachment_id = media_handle_upload(
+				'wpdc_pdf',
+				$post_id,
+				array(),
+				array(
+					'test_form' => false,
+					'mimes'     => array( 'pdf' => 'application/pdf' ),
+				)
+			);
+
+			$chosen = is_wp_error( $attachment_id ) ? 0 : (int) $attachment_id;
+
+			if ( is_wp_error( $attachment_id ) ) {
+				update_post_meta( $post_id, '_wpdc_pdf_error', $attachment_id->get_error_message() );
+			}
+		} else {
+			$chosen = absint( $_POST['wpdc_pdf_id'] ?? 0 );
+		}
+
+		if ( $chosen && $chosen !== $current ) {
+			$path = (string) get_attached_file( $chosen );
+			$mime = (string) get_post_mime_type( $chosen );
+
+			try {
+				if ( 'application/pdf' !== $mime ) {
+					throw new RuntimeException( 'Выбранный файл — не PDF.' );
+				}
+
+				$source = new WPDC_PDF_Source( $path );
+				$pages  = $source->page_count();
+				$page   = 0;
+				$size   = $source->page_size( $page );
+
+				$current = $chosen;
+
+				update_post_meta( $post_id, '_wpdc_pdf_id', $current );
+				update_post_meta( $post_id, '_wpdc_pdf_w_mm', round( $size['width'] * 25.4 / 72, 2 ) );
+				update_post_meta( $post_id, '_wpdc_pdf_h_mm', round( $size['height'] * 25.4 / 72, 2 ) );
+				update_post_meta( $post_id, '_wpdc_pdf_page', $page );
+				update_post_meta( $current, '_wpdc_pdf_template', $post_id );
+			} catch ( Throwable $e ) {
+				update_post_meta( $post_id, '_wpdc_pdf_error', $e->getMessage() );
+
+				if ( $uploaded && $chosen ) {
+					wp_delete_attachment( $chosen, true );
+				}
+			}
+		}
+
+		// Номер страницы PDF (для многостраничных файлов).
+		if ( $current && isset( $_POST['wpdc_pdf_page'] ) ) {
+			$path = (string) get_attached_file( $current );
+
+			try {
+				$source = new WPDC_PDF_Source( $path );
+				$pages  = max( 0, $source->page_count() - 1 );
+				$page   = max( 0, min( $pages, (int) $_POST['wpdc_pdf_page'] - 1 ) );
+				$size   = $source->page_size( $page );
+
+				update_post_meta( $post_id, '_wpdc_pdf_page', $page );
+				update_post_meta( $post_id, '_wpdc_pdf_w_mm', round( $size['width'] * 25.4 / 72, 2 ) );
+				update_post_meta( $post_id, '_wpdc_pdf_h_mm', round( $size['height'] * 25.4 / 72, 2 ) );
+			} catch ( Throwable $e ) {
+				update_post_meta( $post_id, '_wpdc_pdf_error', $e->getMessage() );
+			}
+		}
+
+		return $current;
+	}
+
+	/**
 	 * Сохранение бланка.
 	 *
 	 * @param int     $post_id id.
@@ -297,10 +416,22 @@ class WPDC_Admin {
 			return;
 		}
 
-		// Дизайн.
-		$page = sanitize_key( wp_unslash( $_POST['wpdc_page'] ?? 'a4_landscape' ) );
+		// Дизайн: сначала PDF-шаблон (он влияет на формат страницы).
+		$pdf_id     = $this->save_pdf_template( $post_id );
+		$page       = sanitize_key( wp_unslash( $_POST['wpdc_page'] ?? 'a4_landscape' ) );
+		$new_upload = ( isset( $_POST['wpdc_pdf_id'] ) && absint( $_POST['wpdc_pdf_id'] ) )
+			|| ( isset( $_FILES['wpdc_pdf']['name'] ) && '' !== (string) $_FILES['wpdc_pdf']['name'] );
 
-		if ( ! isset( WPDC_Renderer::PAGE_SIZES[ $page ] ) ) {
+		if ( $pdf_id && $new_upload ) {
+			// Загрузили новый PDF — печатаем в его размере.
+			$page = 'pdf';
+		}
+
+		if ( ! $pdf_id && 'pdf' === $page ) {
+			$page = 'a4_landscape';
+		}
+
+		if ( 'pdf' !== $page && ! isset( WPDC_Renderer::PAGE_SIZES[ $page ] ) ) {
 			$page = 'a4_landscape';
 		}
 

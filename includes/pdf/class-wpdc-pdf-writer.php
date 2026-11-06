@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) && ! defined( 'WPDC_PDF_STANDALONE' ) ) {
 }
 
 require_once __DIR__ . '/class-wpdc-pdf-font.php';
+require_once __DIR__ . '/class-wpdc-pdf-source.php';
 
 /**
  * Документ PDF.
@@ -81,6 +82,13 @@ class WPDC_PDF_Writer {
 	 * @var array<string, array>
 	 */
 	private $images = array();
+
+	/**
+	 * Встроенные страницы PDF: ключ => ['id' => int, 'name' => 'Fm1'].
+	 *
+	 * @var array<string, array>
+	 */
+	private $forms = array();
 
 	/**
 	 * Текущий цвет заливки (RGB 0..1).
@@ -424,6 +432,257 @@ class WPDC_PDF_Writer {
 	}
 
 	/**
+	 * Кладёт страницу другого PDF как подложку (Form XObject).
+	 *
+	 * Страница переносится в наш документ как форма: содержимое и все ресурсы
+	 * (шрифты, изображения, вложенные формы) переезжают вместе с ней, ссылки
+	 * перенумеровываются. Растеризации нет — вектор остаётся вектором.
+	 *
+	 * @param string $path  Путь к исходному PDF.
+	 * @param int    $page  Номер страницы с нуля.
+	 * @param float  $x     Левый край области в pt (от левого края страницы).
+	 * @param float  $y     Верхний край области в pt (от верхнего края).
+	 * @param float  $w     Ширина области в pt.
+	 * @param float  $h     Высота области в pt.
+	 * @param string $fit   cover|contain|stretch.
+	 * @return bool true, если подложка вставлена.
+	 * @throws RuntimeException Если PDF не читается.
+	 */
+	public function pdf_page( $path, $page, $x, $y, $w, $h, $fit = 'cover' ) {
+		if ( $this->current < 0 ) {
+			return false;
+		}
+
+		$form = $this->form_resource( $path, (int) $page );
+
+		if ( ! $form ) {
+			return false;
+		}
+
+		$box = $form['box'];
+		$key = array( 0.0, 0.0, 1.0, 1.0 );
+
+		// Матрица поворота /Rotate.
+		$rotate = ( (int) $form['rotate'] % 360 + 360 ) % 360;
+
+		switch ( $rotate ) {
+			case 90:
+				$key = array( 0.0, -1.0, 1.0, 0.0 );
+				break;
+			case 180:
+				$key = array( -1.0, 0.0, 0.0, -1.0 );
+				break;
+			case 270:
+				$key = array( 0.0, 1.0, -1.0, 0.0 );
+				break;
+			default:
+				$key = array( 1.0, 0.0, 0.0, 1.0 );
+		}
+
+		// Габариты содержимого после поворота.
+		$corners = array(
+			array( $box[0], $box[1] ),
+			array( $box[2], $box[1] ),
+			array( $box[2], $box[3] ),
+			array( $box[0], $box[3] ),
+		);
+
+		$min_x = INF;
+		$min_y = INF;
+		$max_x = -INF;
+		$max_y = -INF;
+
+		foreach ( $corners as $corner ) {
+			$tx = $key[0] * $corner[0] + $key[2] * $corner[1];
+			$ty = $key[1] * $corner[0] + $key[3] * $corner[1];
+
+			$min_x = min( $min_x, $tx );
+			$max_x = max( $max_x, $tx );
+			$min_y = min( $min_y, $ty );
+			$max_y = max( $max_y, $ty );
+		}
+
+		$source_w = max( 0.0001, $max_x - $min_x );
+		$source_h = max( 0.0001, $max_y - $min_y );
+
+		if ( 'stretch' === $fit ) {
+			$scale_x = $w / $source_w;
+			$scale_y = $h / $source_h;
+		} else {
+			$scale   = 'contain' === $fit ? min( $w / $source_w, $h / $source_h ) : max( $w / $source_w, $h / $source_h );
+			$scale_x = $scale;
+			$scale_y = $scale;
+		}
+
+		$drawn_w = $source_w * $scale_x;
+		$drawn_h = $source_h * $scale_y;
+
+		// Центрируем внутри области (для cover масштаб может выйти за края — обрежем).
+		$offset_x = $x + ( $w - $drawn_w ) / 2;
+		$offset_y = $y + ( $h - $drawn_h ) / 2;
+
+		$page_height = $this->pages[ $this->current ]['height'];
+
+		$dest_x = $offset_x - $scale_x * $min_x;
+		$dest_y = ( $page_height - $offset_y - $drawn_h ) - $scale_y * $min_y;
+
+		$a = $scale_x * $key[0];
+		$b = $scale_y * $key[1];
+		$c = $scale_x * $key[2];
+		$d = $scale_y * $key[3];
+
+		// Форма наследует текущее графическое состояние вызывающей страницы.
+		// Без сброса цвета текст шаблона оказался бы закрашен цветом фона
+		// (например, белым на белом) — возвращаем значения по умолчанию.
+		$this->append(
+			sprintf(
+				"q\n0 0 0 rg\n0 0 0 RG\n1 w\n%s %s %s %s %s %s cm\n/%s Do\nQ\n",
+				self::num( $a ),
+				self::num( $b ),
+				self::num( $c ),
+				self::num( $d ),
+				self::num( $dest_x ),
+				self::num( $dest_y ),
+				$form['name']
+			)
+		);
+
+		return true;
+	}
+
+	/**
+	 * Регистрирует страницу PDF как форму.
+	 *
+	 * @param string $path Путь к PDF.
+	 * @param int    $page Номер страницы.
+	 * @return array|null
+	 */
+	private function form_resource( $path, $page ) {
+		if ( ! is_readable( $path ) ) {
+			return null;
+		}
+
+		$key = md5( $path . '|' . (string) @filemtime( $path ) . '|' . $page ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+		if ( isset( $this->forms[ $key ] ) ) {
+			return $this->forms[ $key ];
+		}
+
+		$source = new WPDC_PDF_Source( $path );
+		$export = $source->export_page( $page );
+
+		$objects = $this->import_objects( $source, $export['resources'] );
+		$content = $export['content'];
+
+		$box = $export['box'];
+
+		$dict = sprintf(
+			'<< /Type /XObject /Subtype /Form /FormType 1 /BBox [%s %s %s %s] /Resources %s /Length %d >>',
+			self::num( $box[0] ),
+			self::num( $box[1] ),
+			self::num( $box[2] ),
+			self::num( $box[3] ),
+			$objects['resources'],
+			strlen( $content )
+		);
+
+		$id = $this->add_object( $dict . "\nstream\n" . $content . "\nendstream" );
+
+		$this->forms[ $key ] = array(
+			'id'    => $id,
+			'name'  => 'Fm' . ( count( $this->forms ) + 1 ),
+			'box'   => $box,
+			'rotate' => $export['rotate'],
+		);
+
+		return $this->forms[ $key ];
+	}
+
+	/**
+	 * Переносит граф объектов исходного PDF в наш документ.
+	 *
+	 * @param WPDC_PDF_Source $source    Исходный документ.
+	 * @param string          $resources Словарь ресурсов страницы.
+	 * @return array{resources: string, map: array<int, int>}
+	 */
+	private function import_objects( $source, $resources ) {
+		$queue   = WPDC_PDF_Source::references( $resources );
+		$ordered = array();
+		$seen    = array();
+
+		while ( $queue ) {
+			$number = (int) array_shift( $queue );
+
+			if ( isset( $seen[ $number ] ) ) {
+				continue;
+			}
+
+			$seen[ $number ] = true;
+
+			$object = $source->object( $number );
+
+			if ( null === $object ) {
+				continue;
+			}
+
+			$ordered[ $number ] = $object;
+
+			foreach ( WPDC_PDF_Source::references( $object['dict'] ) as $child ) {
+				if ( ! isset( $seen[ $child ] ) ) {
+					$queue[] = $child;
+				}
+			}
+		}
+
+		// Перенумерация: старый номер → новый id в нашем файле.
+		$map   = array();
+		$start = count( $this->objects ) + 1;
+
+		foreach ( array_keys( $ordered ) as $index => $number ) {
+			$map[ $number ] = $start + $index;
+		}
+
+		foreach ( $ordered as $number => $object ) {
+			$dict = preg_replace_callback(
+				'/(\d+)\s+\d+\s+R\b/',
+				static function ( $match ) use ( $map ) {
+					$old = (int) $match[1];
+
+					return isset( $map[ $old ] ) ? $map[ $old ] . ' 0 R' : $match[0];
+				},
+				$object['dict']
+			);
+
+			if ( null === $object['stream'] ) {
+				$this->add_object( $dict );
+				continue;
+			}
+
+			$data = $object['stream'];
+
+			// /Length пересчитываем: длина уже распакованного потока могла измениться.
+			$dict = preg_replace( '/\/Length\s+(\d+)(\s+\d+\s+R)?/', '/Length ' . strlen( $data ), $dict );
+
+			$this->add_object( $dict . "\nstream\n" . $data . "\nendstream" );
+		}
+
+		$resources = preg_replace_callback(
+			'/(\d+)\s+\d+\s+R\b/',
+			static function ( $match ) use ( $map ) {
+				$old = (int) $match[1];
+
+				return isset( $map[ $old ] ) ? $map[ $old ] . ' 0 R' : $match[0];
+			},
+			$resources
+		);
+
+		return array(
+			'resources' => $resources,
+			'map'       => $map,
+		);
+	}
+
+	/**
 	 * Вписывание изображения в область.
 	 *
 	 * @param float  $iw  Ширина изображения.
@@ -684,6 +943,10 @@ class WPDC_PDF_Writer {
 
 		foreach ( $this->images as $image ) {
 			$xobjects[] = '/' . $image['name'] . ' ' . $image['id'] . ' 0 R';
+		}
+
+		foreach ( $this->forms as $form ) {
+			$xobjects[] = '/' . $form['name'] . ' ' . $form['id'] . ' 0 R';
 		}
 
 		$dict = '<<';
