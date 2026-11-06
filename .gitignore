@@ -5,13 +5,8 @@ Thumbs.db
 .vscode/
 *.swp
 
-# Node (если появятся сборщики)
+# Зависимости (у плагина их нет, но на всякий случай)
 node_modules/
-npm-debug.log*
-yarn-error.log
-package-lock.json
-
-# Composer
 vendor/
 composer.lock
 
@@ -20,8 +15,10 @@ dist/
 build/
 *.zip
 *.log
+*.pdf
+!tests/fixtures/*.pdf
 .cache/
 
-# Локальные конфиги, не предназначенные для репозитория
+# Локальные конфиги
 .env
 .env.*

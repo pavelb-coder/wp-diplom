@@ -1,0 +1,11 @@
+Шрифты DejaVu Sans, DejaVu Sans Bold и DejaVu Serif распространяются
+по лицензии DejaVu Fonts License (производная от Bitstream Vera Fonts
+License). Лицензия разрешает использование, изменение и распространение
+шрифтов, в том числе в составе коммерческих продуктов, при сохранении
+уведомления об авторских правах.
+
+Полный текст лицензии: https://dejavu-fonts.github.io/License.html
+Исходные файлы: https://dejavu-fonts.github.io/
+
+Copyright (c) 2003 by Bitstream, Inc. All Rights Reserved.
+Bitstream Vera is a trademark of Bitstream, Inc.
