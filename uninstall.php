@@ -29,12 +29,6 @@ function wpdc_uninstall_site() {
 		"DELETE FROM {$wpdb->options} WHERE option_name LIKE 'wpdc_number_counter_%'"
 	);
 
-	// Транзиенты массовой генерации.
-	$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		"DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_wpdc_bulk_result_%'"
-		. " OR option_name LIKE '_transient_timeout_wpdc_bulk_result_%'"
-	);
-
 	if ( ! defined( 'WPDC_REMOVE_ALL_DATA' ) || ! WPDC_REMOVE_ALL_DATA ) {
 		return;
 	}

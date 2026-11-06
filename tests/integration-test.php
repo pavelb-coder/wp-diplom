@@ -3,7 +3,7 @@
  * Интеграционный тест логики плагина на заглушках WordPress.
  *
  * Проверяет: нумерацию, создание сертификата, метаданные, коды проверки,
- * кэширование PDF, разбор CSV и конфигурацию бланка.
+ * кэширование PDF и конфигурацию бланка.
  *
  * Запуск: php tests/integration-test.php
  *
@@ -186,36 +186,26 @@ if ( is_string( $pdf_one ) && file_exists( $pdf_one ) ) {
 	check( ! is_wp_error( $pdf_three ) && file_exists( $pdf_three ), 'после сброса PDF пересобран' );
 }
 
-// --- CSV-парсер --------------------------------------------------------
+// --- Массовая генерация удалена ----------------------------------------
 $admin = new WPDC_Admin();
 
-$csv_semicolon = "name;email;course;hours;group\n"
-	. "Иванов Иван;ivan@example.com;Веб-разработка;72;ВР-21\n"
-	. "Петрова Анна;anna@example.com;UI/UX;48;ДЗ-12\n";
+$bulk_methods = array( 'handle_bulk', 'handle_bulk_zip', 'render_bulk_page', 'parse_csv' );
+$leftovers    = array();
 
-$rows = $admin->parse_csv( $csv_semicolon );
+foreach ( $bulk_methods as $method ) {
+	if ( method_exists( $admin, $method ) ) {
+		$leftovers[] = $method;
+	}
+}
 
-check( 2 === count( $rows ), 'CSV с «;» разобран: 2 строки' );
-check( 'Иванов Иван' === $rows[0]['recipient'], 'колонка name → recipient' );
-check( 'ivan@example.com' === $rows[0]['email'], 'колонка email распознана' );
-check( 'ВР-21' === $rows[0]['custom']['group'], 'неизвестная колонка ушла в custom' );
+check( empty( $leftovers ), 'обработчиков массовой генерации нет' . ( $leftovers ? ': ' . implode( ', ', $leftovers ) : '' ) );
 
-$csv_comma = "фио,почта,программа,часы\nСидоров Пётр,sidorov@example.com,Python,36\n";
+$admin_source = (string) file_get_contents( WPDC_DIR . 'includes/class-wpdc-admin.php' );
 
-$rows_comma = $admin->parse_csv( $csv_comma );
-
-check( 1 === count( $rows_comma ), 'CSV с «,» и русскими заголовками разобран' );
-check( 'Сидоров Пётр' === $rows_comma[0]['recipient'], 'русский заголовок «фио» → recipient' );
-check( '36' === $rows_comma[0]['hours'], 'колонка «часы» → hours' );
-
-$csv_broken = "name;email\n;empty@example.com\nБез почты;\n";
-
-$rows_broken = $admin->parse_csv( $csv_broken );
-
-check( 1 === count( $rows_broken ), 'строки без имени отброшены' );
-check( 'Без почты' === $rows_broken[0]['recipient'], 'строка без e-mail сохранена' );
-
-check( array() === $admin->parse_csv( '' ), 'пустой CSV → пустой массив' );
+check( false === strpos( $admin_source, 'wpdc-bulk' ), 'подменю «Массовая генерация» не регистрируется' );
+check( false === strpos( $admin_source, 'wpdc_bulk' ), 'хуки admin_post_wpdc_bulk_* удалены' );
+check( false === strpos( $admin_source, 'ZipArchive' ), 'работа с ZIP удалена' );
+check( ! file_exists( WPDC_DIR . 'admin/views/page-bulk.php' ), 'страница массовой генерации удалена' );
 
 // --- Письмо ------------------------------------------------------------
 $message = WPDC_Email::compose( $created );

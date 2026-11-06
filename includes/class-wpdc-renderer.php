@@ -342,7 +342,7 @@ class WPDC_Renderer {
 
 		$data = array_merge( $defaults, $data );
 
-		// Дополнительные поля из CSV: custom_ключ.
+		// Дополнительные поля сертификата: custom_ключ.
 		$custom = isset( $data['custom'] ) && is_array( $data['custom'] ) ? $data['custom'] : array();
 
 		foreach ( $custom as $key => $value ) {
@@ -388,7 +388,7 @@ class WPDC_Renderer {
 			'{organization}'    => __( 'Название организации', 'wp-diplom' ),
 			'{site_name}'       => __( 'Название сайта', 'wp-diplom' ),
 			'{code}'            => __( 'Код проверки', 'wp-diplom' ),
-			'{custom_КЛЮЧ}'     => __( 'Дополнительная колонка из CSV', 'wp-diplom' ),
+			'{custom_КЛЮЧ}'     => __( 'Дополнительное поле сертификата', 'wp-diplom' ),
 		);
 	}
 

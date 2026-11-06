@@ -20,6 +20,7 @@ class WPDC_Admin {
 	public function hooks() {
 		add_action( 'admin_menu', array( $this, 'menu' ) );
 		add_action( 'admin_notices', array( $this, 'activation_notice' ) );
+		add_action( 'admin_notices', array( $this, 'creation_hint' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
 		add_action( 'add_meta_boxes', array( $this, 'meta_boxes' ) );
 		add_action( 'save_post_wpdc_template', array( $this, 'save_template' ), 10, 2 );
@@ -34,8 +35,6 @@ class WPDC_Admin {
 		add_action( 'admin_post_wpdc_download', array( $this, 'handle_download' ) );
 		add_action( 'admin_post_wpdc_preview', array( $this, 'handle_preview' ) );
 		add_action( 'admin_post_wpdc_send', array( $this, 'handle_send' ) );
-		add_action( 'admin_post_wpdc_bulk_generate', array( $this, 'handle_bulk' ) );
-		add_action( 'admin_post_wpdc_bulk_zip', array( $this, 'handle_bulk_zip' ) );
 		add_action( 'admin_post_wpdc_save_settings', array( $this, 'handle_settings' ) );
 	}
 
@@ -75,18 +74,34 @@ class WPDC_Admin {
 	}
 
 	/**
+	 * Подсказка на списке сертификатов: записи создаются программно.
+	 *
+	 * Массовой генерации в плагине нет, поэтому администратору нужно сказать
+	 * прямо, откуда берутся сертификаты.
+	 */
+	public function creation_hint() {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+
+		if ( ! $screen || 'edit-wpdc_certificate' !== $screen->id || ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
+		$snippet = sprintf(
+			"WPDC_Certificate::create( array( 'recipient' => 'Иванов Иван', 'course' => 'Название программы', 'hours' => 72, 'template_id' => %d ) );",
+			(int) ( WPDC_Plugin::settings()['default_template'] ?? 0 )
+		);
+
+		printf(
+			'<div class="notice notice-info inline wpdc-creation-hint"><p>%s</p><p><code>%s</code></p></div>',
+			esc_html__( 'Сертификаты создаются программно — вызовом WPDC_Certificate::create() по событию на сайте (окончание курса, оплата, вебинар). Номер, код проверки и PDF формируются автоматически.', 'wp-diplom' ),
+			esc_html( $snippet )
+		);
+	}
+
+	/**
 	 * Подменю.
 	 */
 	public function menu() {
-		add_submenu_page(
-			'edit.php?post_type=wpdc_certificate',
-			__( 'Массовая генерация', 'wp-diplom' ),
-			__( 'Массовая генерация', 'wp-diplom' ),
-			'edit_posts',
-			'wpdc-bulk',
-			array( $this, 'render_bulk_page' )
-		);
-
 		add_submenu_page(
 			'edit.php?post_type=wpdc_certificate',
 			__( 'Настройки сертификатов', 'wp-diplom' ),
@@ -843,144 +858,6 @@ class WPDC_Admin {
 	}
 
 	/**
-	 * Массовая генерация из CSV.
-	 */
-	public function handle_bulk() {
-		check_admin_referer( 'wpdc_bulk_generate' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
-		}
-
-		$template_id = absint( $_POST['wpdc_bulk_template'] ?? 0 );
-		$send_email  = ! empty( $_POST['wpdc_bulk_email'] );
-		$csv         = '';
-
-		if ( ! empty( $_FILES['wpdc_bulk_file']['tmp_name'] ) && is_uploaded_file( $_FILES['wpdc_bulk_file']['tmp_name'] ) ) {
-			$csv = (string) file_get_contents( $_FILES['wpdc_bulk_file']['tmp_name'] ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPress.Security.ValidatedSanitizedInput
-		} elseif ( isset( $_POST['wpdc_bulk_csv'] ) ) {
-			$csv = (string) wp_unslash( $_POST['wpdc_bulk_csv'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		}
-
-		$rows = $this->parse_csv( $csv );
-
-		if ( empty( $rows ) ) {
-			wp_safe_redirect(
-				add_query_arg(
-					array(
-						'page'       => 'wpdc-bulk',
-						'wpdc_notice' => 'wpdc-bulk-empty',
-					),
-					admin_url( 'edit.php?post_type=wpdc_certificate' )
-				)
-			);
-			exit;
-		}
-
-		$created = 0;
-		$failed  = 0;
-		$mailed  = 0;
-		$ids     = array();
-
-		foreach ( $rows as $row ) {
-			$result = WPDC_Certificate::create(
-				array(
-					'recipient'   => $row['recipient'] ?? '',
-					'email'       => $row['email'] ?? '',
-					'course'      => $row['course'] ?? '',
-					'hours'       => $row['hours'] ?? '',
-					'teacher'     => $row['teacher'] ?? '',
-					'date'        => $row['date'] ?? '',
-					'template_id' => $template_id,
-					'custom'      => $row['custom'] ?? array(),
-				)
-			);
-
-			if ( is_wp_error( $result ) ) {
-				$failed++;
-				continue;
-			}
-
-			$created++;
-			$ids[] = $result;
-
-			if ( $send_email ) {
-				$sent = WPDC_Email::send( $result );
-
-				if ( ! is_wp_error( $sent ) ) {
-					$mailed++;
-				}
-			}
-		}
-
-		set_transient(
-			'wpdc_bulk_result_' . get_current_user_id(),
-			array(
-				'created' => $created,
-				'failed'  => $failed,
-				'mailed'  => $mailed,
-				'ids'     => $ids,
-			),
-			5 * MINUTE_IN_SECONDS
-		);
-
-		wp_safe_redirect(
-			add_query_arg(
-				array(
-					'page'       => 'wpdc-bulk',
-					'wpdc_notice' => 'wpdc-bulk-done',
-				),
-				admin_url( 'edit.php?post_type=wpdc_certificate' )
-			)
-		);
-		exit;
-	}
-
-	/**
-	 * ZIP со всеми сгенерированными PDF из последней массовой генерации.
-	 */
-	public function handle_bulk_zip() {
-		check_admin_referer( 'wpdc_bulk_zip' );
-
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
-		}
-
-		if ( ! class_exists( 'ZipArchive' ) ) {
-			wp_die( esc_html__( 'Расширение ZIP не установлено на сервере.', 'wp-diplom' ) );
-		}
-
-		$result = get_transient( 'wpdc_bulk_result_' . get_current_user_id() );
-		$ids    = is_array( $result ) && ! empty( $result['ids'] ) ? array_map( 'absint', $result['ids'] ) : array();
-
-		if ( empty( $ids ) ) {
-			wp_die( esc_html__( 'Нет сертификатов для архива.', 'wp-diplom' ) );
-		}
-
-		$tmp = wp_tempnam( 'wpdc-bulk.zip' );
-		$zip = new ZipArchive();
-
-		if ( true !== $zip->open( $tmp, ZipArchive::CREATE | ZipArchive::OVERWRITE ) ) {
-			wp_die( esc_html__( 'Не удалось создать архив.', 'wp-diplom' ) );
-		}
-
-		foreach ( $ids as $id ) {
-			$file = WPDC_Certificate::pdf( $id );
-
-			if ( is_wp_error( $file ) ) {
-				continue;
-			}
-
-			$name = (string) get_post_meta( $id, '_wpdc_number', true );
-			$zip->addFile( $file, ( $name ? $name : 'certificate-' . $id ) . '.pdf' );
-		}
-
-		$zip->close();
-
-		$this->stream_file( $tmp, 'certificates.zip', 'attachment', true );
-	}
-
-	/**
 	 * Сохранение настроек.
 	 */
 	public function handle_settings() {
@@ -1024,19 +901,6 @@ class WPDC_Admin {
 	/* --------------------------------------------------------------------- */
 
 	/**
-	 * Страница массовой генерации.
-	 */
-	public function render_bulk_page() {
-		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_die( esc_html__( 'Недостаточно прав.', 'wp-diplom' ), 403 );
-		}
-
-		$result = get_transient( 'wpdc_bulk_result_' . get_current_user_id() );
-
-		include WPDC_DIR . 'admin/views/page-bulk.php';
-	}
-
-	/**
 	 * Страница настроек.
 	 */
 	public function render_settings_page() {
@@ -1062,104 +926,6 @@ class WPDC_Admin {
 	/* --------------------------------------------------------------------- */
 	/* Утилиты                                                                */
 	/* --------------------------------------------------------------------- */
-
-	/**
-	 * Разбирает CSV в массив строк.
-	 *
-	 * Поддерживает разделители «;» и «,», заголовочную строку и русские
-	 * названия колонок. Неизвестные колонки уходят в custom_*.
-	 *
-	 * @param string $csv Содержимое.
-	 * @return array<int, array<string, mixed>>
-	 */
-	public function parse_csv( $csv ) {
-		$csv = trim( str_replace( array( "\r\n", "\r" ), "\n", (string) $csv ) );
-
-		if ( '' === $csv ) {
-			return array();
-		}
-
-		$lines = explode( "\n", $csv );
-		$lines = array_values( array_filter( array_map( 'trim', $lines ) ) );
-
-		if ( count( $lines ) < 1 ) {
-			return array();
-		}
-
-		$delimiter = substr_count( $lines[0], ';' ) >= substr_count( $lines[0], ',' ) ? ';' : ',';
-
-		$header = str_getcsv( array_shift( $lines ), $delimiter );
-		$header = array_map(
-			static function ( $value ) {
-				$value = strtolower( trim( (string) $value ) );
-				$value = str_replace( "\xEF\xBB\xBF", '', $value );
-
-				return trim( $value );
-			},
-			$header
-		);
-
-		$aliases = array(
-			'recipient' => array( 'recipient', 'name', 'имя', 'фио', 'получатель', 'recipient_name' ),
-			'email'     => array( 'email', 'e-mail', 'почта', 'recipient_email' ),
-			'course'    => array( 'course', 'курс', 'программа', 'course_title' ),
-			'hours'     => array( 'hours', 'часы', 'часов', 'course_hours' ),
-			'teacher'   => array( 'teacher', 'преподаватель', 'teacher_name' ),
-			'date'      => array( 'date', 'дата', 'дата выдачи' ),
-		);
-
-		$map = array();
-
-		foreach ( $header as $index => $column ) {
-			foreach ( $aliases as $field => $names ) {
-				if ( in_array( $column, $names, true ) ) {
-					$map[ $index ] = $field;
-					continue 2;
-				}
-			}
-
-			$map[ $index ] = 'custom:' . $column;
-		}
-
-		$rows = array();
-
-		foreach ( $lines as $line ) {
-			$values = str_getcsv( $line, $delimiter );
-
-			if ( count( array_filter( $values ) ) === 0 ) {
-				continue;
-			}
-
-			$row = array( 'custom' => array() );
-
-			foreach ( $values as $index => $value ) {
-				$value = trim( (string) $value );
-				$field = $map[ $index ] ?? '';
-
-				if ( 0 === strpos( $field, 'custom:' ) ) {
-					$key = sanitize_key( substr( $field, 7 ) );
-
-					if ( '' !== $key && '' !== $value ) {
-						$row['custom'][ $key ] = $value;
-					}
-
-					continue;
-				}
-
-				if ( '' !== $field ) {
-					$row[ $field ] = $value;
-				}
-			}
-
-			if ( empty( $row['recipient'] ) ) {
-				continue;
-			}
-
-			$rows[] = $row;
-		}
-
-		return $rows;
-	}
 
 	/**
 	 * Отдаёт файл в браузер.
