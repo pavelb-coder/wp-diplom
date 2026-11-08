@@ -129,6 +129,31 @@
 			body.append(template);
 		});
 
+		/**
+		 * Перенумеровывает строки таблицы: name="prefix[старый][ключ]" → prefix[новый][ключ].
+		 *
+		 * Страховка от совпавших индексов: если два блока уйдут с одним именем,
+		 * PHP оставит только последний и предыдущий блок «исчезнет» после сохранения.
+		 */
+		function reindexRows($body, prefix) {
+			$body.find('tr').each(function (index) {
+				$(this).find('input, textarea, select').each(function () {
+					var name = $(this).attr('name');
+
+					if (!name) {
+						return;
+					}
+
+					$(this).attr('name', name.replace(new RegExp('^' + prefix + '\\[\\d+\\]'), prefix + '[' + index + ']'));
+				});
+			});
+		}
+
+		$('form#post').on('submit', function () {
+			reindexRows(body, 'wpdc_field');
+			reindexRows(fontsBody, 'wpdc_fonts');
+		});
+
 		body.on('click', '.wpdc-remove-field', function (event) {
 			event.preventDefault();
 

@@ -42,7 +42,10 @@ $render_row = static function ( $field, $index ) use ( $families ) {
 		$field
 	);
 
-	$name = 'wpdc_field[' . (int) $index . ']';
+	// Индекс может быть заглушкой __index__ для шаблона строки: приводим к int
+	// только числа, иначе new Int('__index__') = 0 и все новые блоки получают
+	// одно и то же имя wpdc_field[0], из-за чего при сохранении остаётся один.
+	$name = 'wpdc_field[' . ( is_numeric( $index ) ? (int) $index : (string) $index ) . ']';
 	?>
 	<tr class="wpdc-field-row">
 		<td class="wpdc-field-row__handle" title="<?php esc_attr_e( 'Перетащите, чтобы изменить порядок', 'wp-diplom' ); ?>">

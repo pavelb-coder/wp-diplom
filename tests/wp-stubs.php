@@ -273,6 +273,22 @@ function esc_html( $text ) {
 	return htmlspecialchars( (string) $text, ENT_QUOTES );
 }
 
+function esc_attr_e( $text, $domain = null ) {
+	echo esc_attr( $text );
+}
+
+function checked( $checked, $current = true ) {
+	if ( (string) $checked === (string) $current ) {
+		echo " checked='checked'";
+	}
+}
+
+function selected( $selected, $current = true ) {
+	if ( (string) $selected === (string) $current ) {
+		echo " selected='selected'";
+	}
+}
+
 function esc_attr( $text ) {
 	return htmlspecialchars( (string) $text, ENT_QUOTES );
 }

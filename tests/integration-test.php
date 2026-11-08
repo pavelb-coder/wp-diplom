@@ -258,6 +258,35 @@ check( 'ДИП' === $params['number_prefix'], 'префикс номера бе�
 check( 3 === (int) $params['number_padding'], 'разрядность берётся из бланка' );
 check( 'Тестовый сайт' === $params['organization'], 'пустой параметр берётся из общих настроек' );
 
+// --- Новые блоки полей: у каждой строки свой индекс -----------------------
+$fields_html = ( function () {
+	$fields       = WPDC_Renderer::default_fields();
+	$placeholders = WPDC_Renderer::placeholders();
+	$families     = WPDC_Admin::font_families( 0 );
+	$preview_url  = 'http://example.test/preview';
+
+	ob_start();
+	include WPDC_DIR . 'admin/views/meta-template-fields.php';
+
+	return (string) ob_get_clean();
+} )();
+
+$row_template = '';
+
+if ( preg_match( '#<script type="text/html" id="tmpl-wpdc-field-row">(.*?)</script>#s', $fields_html, $matches ) ) {
+	$row_template = $matches[1];
+}
+
+check( '' !== $row_template, 'шаблон строки блока отрисован' );
+check( false !== strpos( $row_template, 'wpdc_field[__index__][id]' ), 'в шаблоне строки есть заглушка __index__' );
+check( false === strpos( $row_template, 'wpdc_field[0][id]' ), 'в шаблоне строки нет жёсткого индекса 0' );
+check( false !== strpos( $fields_html, 'wpdc_field[0][id]' ), 'существующая строка блока печатается со своим индексом' );
+
+$admin_js_source = (string) file_get_contents( WPDC_DIR . 'assets/js/admin.js' );
+
+check( false !== strpos( $admin_js_source, 'reindexRows' ), 'в админ-скрипте есть перенумерация строк перед сохранением' );
+check( false !== strpos( $admin_js_source, "reindexRows(body, 'wpdc_field')" ), 'поля бланка перенумеровываются при отправке формы' );
+
 // --- Преподаватель убран из плагина --------------------------------------
 $cert_view = (string) file_get_contents( WPDC_DIR . 'admin/views/meta-certificate.php' );
 

@@ -3,7 +3,7 @@
  * Plugin Name:       WP Diplom — генератор сертификатов
  * Plugin URI:        https://github.com/pavelb-coder/wp-diplom
  * Description:       Автоматическая генерация сертификатов и дипломов в PDF: визуальные бланки, программная выдача по событию на сайте, отправка на e-mail и проверка подлинности по коду.
- * Version:           1.10.0
+ * Version:           1.10.1
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            pavelb-coder
