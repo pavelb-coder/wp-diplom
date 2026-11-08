@@ -38,7 +38,6 @@ $data = WPDC_Renderer::normalize_data(
 		'recipient_name' => 'Петрова Анна Сергеевна',
 		'course_title'   => 'Веб-разработка на WordPress',
 		'course_hours'   => '72',
-		'teacher'        => 'Иванов И. И.',
 		'date'           => '06.11.2026',
 		'number'         => 'WPD-2026-0001',
 		'organization'   => 'Красноярский техникум',

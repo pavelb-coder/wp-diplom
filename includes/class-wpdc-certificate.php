@@ -159,7 +159,6 @@ class WPDC_Certificate {
 			'recipient_email' => (string) get_post_meta( $post_id, '_wpdc_email', true ),
 			'course_title'    => (string) get_post_meta( $post_id, '_wpdc_course', true ),
 			'course_hours'    => (string) get_post_meta( $post_id, '_wpdc_hours', true ),
-			'teacher'         => (string) get_post_meta( $post_id, '_wpdc_teacher', true ),
 			'date'            => self::format_date( $date ),
 			'number'          => (string) get_post_meta( $post_id, '_wpdc_number', true ),
 			'organization'    => (string) WPDC_Plugin::params( absint( get_post_meta( $post_id, '_wpdc_template', true ) ) )['organization'],
@@ -220,7 +219,7 @@ class WPDC_Certificate {
 	/**
 	 * Создаёт сертификат.
 	 *
-	 * @param array<string, mixed> $args Данные: recipient, email, course, hours, teacher, date, template_id, custom, number.
+	 * @param array<string, mixed> $args Данные: recipient, email, course, hours, date, template_id, custom, number.
 	 * @return int|WP_Error
 	 */
 	public static function create( array $args ) {
@@ -273,7 +272,6 @@ class WPDC_Certificate {
 		update_post_meta( $post_id, '_wpdc_email', sanitize_email( (string) ( $args['email'] ?? '' ) ) );
 		update_post_meta( $post_id, '_wpdc_course', sanitize_text_field( (string) ( $args['course'] ?? '' ) ) );
 		update_post_meta( $post_id, '_wpdc_hours', sanitize_text_field( (string) ( $args['hours'] ?? '' ) ) );
-		update_post_meta( $post_id, '_wpdc_teacher', sanitize_text_field( (string) ( $args['teacher'] ?? '' ) ) );
 		update_post_meta( $post_id, '_wpdc_date', sanitize_text_field( $date ) );
 		update_post_meta( $post_id, '_wpdc_number', sanitize_text_field( $number ) );
 		update_post_meta( $post_id, '_wpdc_template', $template_id );

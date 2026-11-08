@@ -17,6 +17,7 @@ if ( ! defined( 'WPDC_DIR' ) ) {
 require_once __DIR__ . '/wp-stubs.php';
 
 require_once WPDC_DIR . 'includes/class-wpdc-renderer.php';
+require_once WPDC_DIR . 'includes/class-wpdc-texts.php';
 require_once WPDC_DIR . 'includes/class-wpdc-certificate.php';
 require_once WPDC_DIR . 'includes/class-wpdc-admin.php';
 require_once WPDC_DIR . 'includes/class-wpdc-email.php';
@@ -65,7 +66,7 @@ class WPDC_Plugin {
 		$saved    = is_array( $saved ) ? $saved : array();
 		$params   = array();
 
-		foreach ( array( 'organization', 'number_prefix', 'number_padding', 'sample_teacher', 'enable_verify', 'verify_page' ) as $key ) {
+		foreach ( array( 'organization', 'number_prefix', 'number_padding', 'enable_verify', 'verify_page' ) as $key ) {
 			$value          = array_key_exists( $key, $saved ) ? $saved[ $key ] : null;
 			$params[ $key ] = ( null !== $value && '' !== trim( (string) $value ) ) ? $value : ( $settings[ $key ] ?? '' );
 		}
@@ -146,7 +147,6 @@ $created = WPDC_Certificate::create(
 		'email'       => 'ivan@example.com',
 		'course'      => 'Веб-разработка на WordPress',
 		'hours'       => '72',
-		'teacher'     => 'Петров П. П.',
 		'date'        => '2026-11-06',
 		'template_id' => $template_id,
 		'custom'      => array( 'group' => 'ВР-21' ),
@@ -238,7 +238,7 @@ foreach ( array( 'handle_settings', 'render_settings_page' ) as $method ) {
 
 $params_view = (string) file_get_contents( WPDC_DIR . 'admin/views/meta-template-params.php' );
 
-foreach ( array( 'wpdc_params[organization]', 'wpdc_params[number_prefix]', 'wpdc_params[number_padding]', 'wpdc_params[enable_verify]', 'wpdc_params[verify_page]', 'wpdc_params[sample_teacher]', 'wpdc_is_default' ) as $field ) {
+foreach ( array( 'wpdc_params[organization]', 'wpdc_params[number_prefix]', 'wpdc_params[number_padding]', 'wpdc_params[enable_verify]', 'wpdc_params[verify_page]', 'wpdc_is_default' ) as $field ) {
 	check( false !== strpos( $params_view, $field ), 'в параметрах бланка есть поле ' . $field );
 }
 
@@ -257,6 +257,31 @@ $params = WPDC_Plugin::params( 99 );
 check( 'ДИП' === $params['number_prefix'], 'префикс номера берётся из бланка' );
 check( 3 === (int) $params['number_padding'], 'разрядность берётся из бланка' );
 check( 'Тестовый сайт' === $params['organization'], 'пустой параметр берётся из общих настроек' );
+
+// --- Преподаватель убран из плагина --------------------------------------
+$cert_view = (string) file_get_contents( WPDC_DIR . 'admin/views/meta-certificate.php' );
+
+check( false === strpos( $admin_source, 'wpdc_teacher' ), 'в админке нет поля wpdc_teacher' );
+check( false === strpos( $admin_source, '_wpdc_teacher' ), 'мета _wpdc_teacher больше не пишется' );
+check( false === strpos( $cert_view, "wpdc_teacher" ), 'в карточке сертификата нет поля «Преподаватель»' );
+check( false === strpos( $params_view, 'sample_teacher' ), 'в параметрах бланка нет «Преподаватель в предпросмотре»' );
+check( false === strpos( (string) file_get_contents( WPDC_DIR . 'includes/class-wpdc-plugin.php' ), 'sample_teacher' ), 'sample_teacher убран из PARAM_KEYS' );
+check( false === strpos( (string) file_get_contents( WPDC_DIR . 'includes/class-wpdc-frontend.php' ), "'teacher'" ), 'на странице проверки нет строки «Преподаватель»' );
+
+$placeholders = WPDC_Renderer::placeholders();
+
+check( ! isset( $placeholders['{teacher}'] ), 'плейсхолдера {teacher} больше нет' );
+check( '' === WPDC_Renderer::replace_placeholders( '{teacher}', WPDC_Renderer::normalize_data( array() ) ), 'старый текст с {teacher} печатается без имени' );
+
+$cert_data = WPDC_Certificate::data( $created );
+
+check( ! array_key_exists( 'teacher', $cert_data ), 'в данных сертификата нет teacher' );
+
+$texts_defaults = WPDC_Texts::defaults();
+$texts_presets  = WPDC_Texts::presets();
+
+check( false === strpos( $texts_defaults['signature'], '{teacher}' ), 'слот «Подпись» не ссылается на преподавателя' );
+check( false === strpos( implode( ' ', $texts_presets['signature'] ), '{teacher}' ), 'в готовых вариантах подписи нет {teacher}' );
 
 // --- Сторонние шрифты бланка --------------------------------------------
 $GLOBALS['wpdc_stub_attachments'] = array(

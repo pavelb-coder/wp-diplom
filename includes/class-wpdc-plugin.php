@@ -185,7 +185,7 @@ final class WPDC_Plugin {
 	 *
 	 * @var string[]
 	 */
-	const PARAM_KEYS = array( 'organization', 'number_prefix', 'number_padding', 'sample_teacher', 'enable_verify', 'verify_page' );
+	const PARAM_KEYS = array( 'organization', 'number_prefix', 'number_padding', 'enable_verify', 'verify_page' );
 
 	/**
 	 * Параметры бланка: значение из бланка, иначе сохранённое ранее общее.
@@ -227,7 +227,6 @@ final class WPDC_Plugin {
 			'organization'   => sanitize_text_field( wp_unslash( (string) ( $raw['organization'] ?? '' ) ) ),
 			'number_prefix'  => sanitize_text_field( wp_unslash( (string) ( $raw['number_prefix'] ?? '' ) ) ),
 			'number_padding' => max( 1, min( 10, absint( $raw['number_padding'] ?? 4 ) ) ),
-			'sample_teacher' => sanitize_text_field( wp_unslash( (string) ( $raw['sample_teacher'] ?? '' ) ) ),
 			'enable_verify'  => empty( $raw['enable_verify'] ) ? 0 : 1,
 			'verify_page'    => absint( $raw['verify_page'] ?? 0 ),
 		);
@@ -266,7 +265,6 @@ final class WPDC_Plugin {
 			'number_prefix'   => 'WPD',
 			'number_padding'  => 4,
 			'sample_date'     => '',
-			'sample_teacher'  => '',
 		);
 
 		$saved = get_option( 'wpdc_settings', array() );

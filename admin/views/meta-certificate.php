@@ -17,7 +17,6 @@ $wpdc_recipient = (string) get_post_meta( $post->ID, '_wpdc_recipient', true );
 $wpdc_email     = (string) get_post_meta( $post->ID, '_wpdc_email', true );
 $wpdc_course    = (string) get_post_meta( $post->ID, '_wpdc_course', true );
 $wpdc_hours     = (string) get_post_meta( $post->ID, '_wpdc_hours', true );
-$wpdc_teacher   = (string) get_post_meta( $post->ID, '_wpdc_teacher', true );
 $wpdc_date      = (string) get_post_meta( $post->ID, '_wpdc_date', true );
 $wpdc_number    = (string) get_post_meta( $post->ID, '_wpdc_number', true );
 $wpdc_template  = absint( get_post_meta( $post->ID, '_wpdc_template', true ) );
@@ -96,16 +95,6 @@ $wpdc_default_template = $wpdc_template ? $wpdc_template : absint( $settings['de
 			<td>
 				<input type="number" min="0" step="1" class="small-text" name="wpdc_hours" id="wpdc_hours"
 					value="<?php echo esc_attr( $wpdc_hours ); ?>">
-			</td>
-		</tr>
-
-		<tr>
-			<th scope="row">
-				<label for="wpdc_teacher"><?php esc_html_e( 'Преподаватель', 'wp-diplom' ); ?></label>
-			</th>
-			<td>
-				<input type="text" class="regular-text" name="wpdc_teacher" id="wpdc_teacher"
-					value="<?php echo esc_attr( $wpdc_teacher ); ?>">
 			</td>
 		</tr>
 

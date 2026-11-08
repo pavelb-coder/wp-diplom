@@ -4,7 +4,7 @@ Tags: certificates, diploma, pdf, awards, education
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.9.0
+Stable tag: 1.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,11 +45,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 **Плейсхолдеры**
 
-`{recipient_name}`, `{recipient_email}`, `{course_title}`, `{course_hours}`, `{teacher}`, `{date}`, `{number}`, `{organization}`, `{site_name}`, а также `{custom_КЛЮЧ}` для произвольных полей сертификата.
+`{recipient_name}`, `{recipient_email}`, `{course_title}`, `{course_hours}`, `{date}`, `{number}`, `{organization}`, `{site_name}`, а также `{custom_КЛЮЧ}` для произвольных полей сертификата.
 
 **Параметры бланка**
 
-Все настройки живут в бланке: организация, префикс и разрядность номеров, проверка подлинности, страница с шорткодом проверки, преподаватель в предпросмотре и отметка «бланк по умолчанию». Отдельной страницы настроек нет.
+Все настройки живут в бланке: организация, префикс и разрядность номеров, проверка подлинности, страница с шорткодом проверки и отметка «бланк по умолчанию». Отдельной страницы настроек нет.
 
 **Выдача сертификатов**
 

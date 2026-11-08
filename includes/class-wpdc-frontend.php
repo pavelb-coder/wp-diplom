@@ -178,7 +178,6 @@ class WPDC_Frontend {
 			__( 'Часов', 'wp-diplom' )       => $data['course_hours'],
 			__( 'Дата выдачи', 'wp-diplom' ) => $data['date'],
 			__( 'Номер', 'wp-diplom' )       => $data['number'],
-			__( 'Преподаватель', 'wp-diplom' ) => $data['teacher'],
 		);
 
 		$html  = '<div class="wpdc-result wpdc-result--valid">';

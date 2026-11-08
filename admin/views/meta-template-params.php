@@ -3,7 +3,7 @@
  * Метабокс: параметры бланка.
  *
  * Сюда переехали настройки, которые раньше жили на отдельной странице:
- * организация, нумерация, проверка подлинности, преподаватель в предпросмотре
+ * организация, нумерация, проверка подлинности
  * и отметка «бланк по умолчанию». Значения хранятся в самом бланке, поэтому
  * у каждого документа может быть своя серия номеров и своя организация.
  *
@@ -100,19 +100,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 					);
 					?>
 				</p>
-			</td>
-		</tr>
-
-		<tr>
-			<th scope="row">
-				<label for="wpdc_param_sample_teacher"><?php esc_html_e( 'Преподаватель в предпросмотре', 'wp-diplom' ); ?></label>
-			</th>
-			<td>
-				<input type="text" class="regular-text" id="wpdc_param_sample_teacher"
-					name="wpdc_params[sample_teacher]"
-					value="<?php echo esc_attr( $saved['sample_teacher'] ?? '' ); ?>"
-					placeholder="<?php echo esc_attr( $params['sample_teacher'] ? $params['sample_teacher'] : __( 'Иванов И. И.', 'wp-diplom' ) ); ?>">
-				<p class="description"><?php esc_html_e( 'Подставляется вместо {teacher}, когда бланк открывают в предпросмотре.', 'wp-diplom' ); ?></p>
 			</td>
 		</tr>
 

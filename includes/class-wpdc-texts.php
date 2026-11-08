@@ -72,7 +72,7 @@ class WPDC_Texts {
 			'course'    => 'успешно завершил(а) обучение по программе «{course_title}» объёмом {course_hours} академических часов',
 			'date'      => 'Дата выдачи: {date}',
 			'number'    => '№ {number}',
-			'signature' => '{teacher}',
+			'signature' => 'Подпись: ________________',
 			'verify'    => 'Проверить подлинность: {code}',
 			'course_title' => '',
 		);
@@ -112,9 +112,9 @@ class WPDC_Texts {
 				'Регистрационный номер: {number}',
 			),
 			'signature' => array(
-				'{teacher}',
-				'Преподаватель: {teacher}',
-				'Руководитель программы: {teacher}',
+				'Подпись: ________________',
+				'Директор ________________',
+				'Руководитель программы ________________',
 			),
 			'verify'    => array(
 				'Проверить подлинность: {code}',
@@ -244,7 +244,6 @@ class WPDC_Texts {
 			'course_hours'   => '72',
 			'date'           => date_i18n( 'd.m.Y' ),
 			'number'         => 'WPD-' . gmdate( 'Y' ) . '-0001',
-			'teacher'        => 'Петрова Анна Сергеевна',
 			'organization'   => get_bloginfo( 'name' ),
 			'code'           => 'a1b2c3d4e5f6',
 			'verify_url'     => home_url( '/certificate/a1b2c3d4e5f6/' ),

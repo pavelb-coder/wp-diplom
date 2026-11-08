@@ -730,7 +730,6 @@ class WPDC_Admin {
 		update_post_meta( $post_id, '_wpdc_email', sanitize_email( wp_unslash( $_POST['wpdc_email'] ?? '' ) ) );
 		update_post_meta( $post_id, '_wpdc_course', sanitize_text_field( wp_unslash( $_POST['wpdc_course'] ?? '' ) ) );
 		update_post_meta( $post_id, '_wpdc_hours', sanitize_text_field( wp_unslash( $_POST['wpdc_hours'] ?? '' ) ) );
-		update_post_meta( $post_id, '_wpdc_teacher', sanitize_text_field( wp_unslash( $_POST['wpdc_teacher'] ?? '' ) ) );
 
 		$date = sanitize_text_field( wp_unslash( $_POST['wpdc_date'] ?? '' ) );
 		update_post_meta( $post_id, '_wpdc_date', preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ? $date : current_time( 'Y-m-d' ) );
@@ -945,7 +944,6 @@ class WPDC_Admin {
 			'recipient_email' => 'anna@example.com',
 			'course_title'    => __( 'Веб-разработка на WordPress', 'wp-diplom' ),
 			'course_hours'    => '72',
-			'teacher'         => $params['sample_teacher'] ? $params['sample_teacher'] : __( 'Иванов И. И.', 'wp-diplom' ),
 			'date'            => WPDC_Certificate::format_date( current_time( 'Y-m-d' ) ),
 			'number'          => 'WPD-' . current_time( 'Y' ) . '-0001',
 			'organization'    => $params['organization'],
